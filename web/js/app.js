@@ -36,7 +36,10 @@
   function renderBoard() {
     $("#board-count").textContent = S.board.length; $("#bt-warn").textContent = S.board.filter((c) => c.warn).length;
     const B = $("#board");
-    B.innerHTML = COLS.map(([k, n]) => { const cs = S.board.filter((c) => c.col === k); return `<div class="col ${k === "triage" ? "hl" : ""}" data-col="${k}"><div class="col-h"><span class="dot" style="background:${k === "complete" ? "#32a467" : k === "exec" ? "#4c90f0" : "#ec9a3c"}"></span>${n}<span class="n">${cs.length}</span><span class="cl"><i data-lucide="chevrons-left-right"></i></span></div><div class="col-b">` +
+    const bq = ($("#b-search") || {}).value ? $("#b-search").value.toLowerCase() : "";
+    const etaOf = (c) => parseFloat(String(c.tot || "").split("+")[1]) || 999;
+    B.innerHTML = COLS.map(([k, n]) => { let cs = S.board.filter((c) => c.col === k && (!S.bWarn || c.warn) && (!bq || (c.title + " " + c.sub + " " + c.id).toLowerCase().includes(bq)));
+      cs = S.bSort === "eta" ? cs.slice().sort((a, b) => etaOf(a) - etaOf(b)) : cs.slice().sort((a, b) => b.t - a.t); return `<div class="col ${k === "triage" ? "hl" : ""}" data-col="${k}"><div class="col-h"><span class="dot" style="background:${k === "complete" ? "#32a467" : k === "exec" ? "#4c90f0" : "#ec9a3c"}"></span>${n}<span class="n">${cs.length}</span></div><div class="col-b">` +
       cs.map((c) => `<div class="bc k-${c.kind}" draggable="true" data-id="${c.id}">${c.tot ? `<div class="tot">${esc(c.tot.split(":")[0])}: <b>${esc(c.tot.split(":").slice(1).join(":"))}</b></div>` : ""}<div class="row"><span class="ic"><i data-lucide="${c.kind === "asg" ? "ship" : "crosshair"}"></i></span><div><span class="id">${c.id}</span> <b>${esc(c.title)}</b><small>${esc(c.sub)}</small></div></div><div class="ft"><span>Last edited ${ago(c.t)}</span>${c.warn ? '<span class="w"><i data-lucide="triangle-alert"></i></span>' : ""}</div></div>`).join("") + "</div></div>"; }).join("");
     icons(B);
     $$(".bc", B).forEach((e) => e.addEventListener("dragstart", (ev) => ev.dataTransfer.setData("text", e.dataset.id)));
@@ -51,17 +54,16 @@
   const vis = { sites: true, assets: true, oil: true, risk: true, lanes: true };
   function renderLeft() {
     const L = $("#left");
-    const tabs = `<div class="lp-tabs"><button class="lp-tab ${S.tab === "targets" ? "on" : ""}" data-t="targets"><i data-lucide="crosshair"></i>Targets</button><button class="lp-tab ic ${S.tab === "layers" ? "on" : ""}" data-t="layers" title="Map layers"><i data-lucide="layers"></i></button><button class="lp-tab ic ${S.tab === "assets" ? "on" : ""}" data-t="assets" title="AI asset tasking recommender"><i data-lucide="ship"></i></button><button class="lp-tab ic ${S.tab === "alerts" ? "on" : ""}" data-t="alerts" title="Activity"><i data-lucide="triangle-alert"></i></button><button class="lp-tab ic" data-t="home" title="Overview"><i data-lucide="house"></i></button><span class="sp"></span><button class="lp-tab ic"><i data-lucide="panel-left-close"></i></button></div>`;
+    const tabs = `<div class="lp-tabs"><button class="lp-tab ${S.tab === "targets" ? "on" : ""}" data-t="targets"><i data-lucide="crosshair"></i>Targets</button><button class="lp-tab ic ${S.tab === "layers" ? "on" : ""}" data-t="layers" title="Map layers"><i data-lucide="layers"></i></button><button class="lp-tab ic ${S.tab === "assets" ? "on" : ""}" data-t="assets" title="AI asset tasking recommender"><i data-lucide="ship"></i></button><button class="lp-tab ic ${S.tab === "alerts" ? "on" : ""}" data-t="alerts" title="Activity"><i data-lucide="triangle-alert"></i></button><button class="lp-tab ic" data-t="home" title="Overview"><i data-lucide="house"></i></button><span class="sp"></span><button class="lp-tab ic" id="lp-collapse" title="Collapse panel"><i data-lucide="panel-left-close"></i></button></div>`;
     let body = "";
     const q = ($("#obj-search").value || "").toLowerCase(), f = (s) => !q || s.toLowerCase().includes(q);
     if (S.tab === "targets" || S.tab === "home") {
       const items = [];
       if (S.det) items.push({ key: "slick", icon: "crosshair", t: "Computer Vision Detection", s: `Oil slick · ${polyAreaKm2(S.slick).toFixed(2)} km²`, st: stageName(), dot: "#ec9a3c", tr: S.fc && S.fc.stats.first_landfall_h != null ? `+${S.fc.stats.first_landfall_h} h` : "" });
       (S.fc ? S.fc.impacts : []).forEach((im) => { const s = siteById(im.site_id); if (!s || s.kind === "lane") return; items.push({ key: "site:" + s.id, icon: SITE_ICON[s.kind] || "map-pin", t: "Shoreline impact", s: `${s.name}`, st: S.approved ? "In execution" : S.plan ? "Paired" : "Pending pairing", dot: S.hour >= im.eta_h ? "#e76a6e" : "#ec9a3c", tr: `ETA +${im.eta_h} h` }); });
-      body = `<div class="lp-h">Incident board <span class="lk">1 board <i data-lucide="plus"></i></span></div>
-        <div class="bp-field"><span>Board:</span><b><i data-lucide="crosshair" style="color:#e76a6e"></i>HZ-01</b><i data-lucide="x" class="x"></i><i data-lucide="ellipsis"></i></div>
-        <div class="bp-field"><i data-lucide="search"></i><input placeholder="Search targets…" id="lp-search"><span class="fl"><i data-lucide="filter"></i></span></div>
-        <div class="chips"><span><i data-lucide="git-commit-horizontal"></i>Stage</span><span><i data-lucide="user-round"></i>Target status</span><span><i data-lucide="hexagon"></i>Area</span></div>
+      body = `<div class="lp-h">Incident board <span class="lk">${items.length} target${items.length === 1 ? "" : "s"}</span></div>
+        <div class="bp-field"><span>Board:</span><b><i data-lucide="crosshair" style="color:#e76a6e"></i>HZ-01 · Strait of Hormuz</b></div>
+        <div class="bp-field"><i data-lucide="search"></i><input placeholder="Search targets…" id="lp-search"></div>
         <div class="rec-row" id="rec-row"><i data-lucide="sparkles"></i>Recommend taskings<i data-lucide="arrow-right" class="a"></i></div>` +
         (items.length ? items.filter((it) => f(it.s + it.t)).map((it) => `<div class="tcard ${S.sel === it.key ? "sel" : ""}" data-key="${it.key}"><span class="ti"><i data-lucide="${it.icon}"></i></span><b>${esc(it.t)}</b><span class="tr">${esc(it.tr)}</span><small>${esc(it.s)}</small><div class="st">HZ-01 <i style="background:${it.dot}"></i>${esc(it.st)}</div></div>`).join("") +
           (S.det ? `<div class="sub-ap"><i data-lucide="corner-down-right"></i>${S.fc ? S.fc.particles + " particles · 72 h" : "awaiting forecast"}</div>` : "")
@@ -71,17 +73,16 @@
       const grp = (key, name, icon, items) => `<div class="lg"><div class="lg-h"><i data-lucide="${icon}"></i>${name}<span class="n">${items.length}</span><span class="eye" data-eye="${key}"><i data-lucide="${vis[key] === false ? "eye-off" : "eye"}"></i></span></div>${items.join("")}</div>`;
       const sites = S.sites.filter((s) => s.kind !== "lane" && f(s.name)).sort((a, b) => atRisk.has(b.id) - atRisk.has(a.id)).map((s) => { const im = S.fc && S.fc.impacts.find((i) => i.site_id === s.id); return `<div class="li" data-site="${s.id}"><span class="b" style="background:${im ? "#e76a6e" : s.kind === "intake" ? "#8abbff" : "#abb3bf"}"></span>${esc(s.name)}<small>${im ? "+" + im.eta_h + " h" : s.kind}</small></div>`; });
       const assets = S.resources.filter((r) => f(r.name)).map((r) => `<div class="li" data-res="${r.id}"><i data-lucide="${TYPE_ICON[r.type] || "box"}" style="width:12px;height:12px;color:#8abbff"></i>${esc(r.name)}<small>${r.status}</small></div>`);
-      const lanes = S.sites.filter((s) => s.kind === "lane").map((s) => `<div class="li"><span class="b" style="background:#8abbff"></span>${esc(s.name)}</div>`);
+      const lanes = S.sites.filter((s) => s.kind === "lane").map((s) => `<div class="li" data-lane="${s.id}"><span class="b" style="background:#8abbff"></span>${esc(s.name)}</div>`);
       body = `<div class="lp-h">Map layers <span class="lk">${S.sites.length + S.resources.length} objects</span></div>` + grp("oil", "Detections & drift", "crosshair", S.det ? [`<div class="li" data-go="slick"><span class="b" style="background:#e5484d"></span>Oil slick · SAM 3.1<small>${polyAreaKm2(S.slick).toFixed(2)} km²</small></div>`] : []) +
         grp("risk", "Sensitive sites", "shield-alert", sites) + grp("assets", "Response assets", "ship", assets) + grp("lanes", "Traffic separation scheme", "waypoints", lanes);
     } else if (S.tab === "assets") {
-      const head = `<div class="lp-h" style="padding-top:8px"><span style="display:flex;gap:7px;align-items:center;color:#f6f7f9"><i data-lucide="arrow-left"></i><i data-lucide="sparkles" style="color:#bdabff"></i>AI asset tasking recommender</span><i data-lucide="sliders-horizontal" id="open-metrics" style="cursor:pointer"></i></div>
-        <div style="padding:0 10px 6px;color:#8f99a8;font-size:10.5px">Last refresh ${ago(S.planT || S.t0)} · <span style="color:#8abbff;cursor:pointer" id="re-rec">Refresh</span></div>
-        <div class="chips"><span><i data-lucide="user-round"></i>My assets</span><span><i data-lucide="git-fork"></i>Domain</span><span><i data-lucide="hexagon"></i>Area</span><span style="margin-left:auto"><i data-lucide="ellipsis"></i></span></div>`;
+      const head = `<div class="lp-h" style="padding-top:8px"><span style="display:flex;gap:7px;align-items:center;color:#f6f7f9"><i data-lucide="arrow-left" id="lp-back" style="cursor:pointer" title="Back to targets"></i><i data-lucide="sparkles" style="color:#bdabff"></i>AI asset tasking recommender</span><i data-lucide="sliders-horizontal" id="open-metrics" style="cursor:pointer"></i></div>
+        <div style="padding:0 10px 6px;color:#8f99a8;font-size:10.5px">Last refresh ${ago(S.planT || S.t0)} · <span style="color:#8abbff;cursor:pointer" id="re-rec">Refresh</span></div>`;
       if (S.plan) {
         body = head + S.plan.plan.assignments.map((a) => {
           const r = resById(a.resource_id) || { name: a.resource_id, type: "vessel", base: "" }, sc = +a.score || 0, m = sc >= 0.8 ? "Strong match" : sc >= 0.6 ? "Fair match" : "Weak match";
-          return `<div class="mcard"><div class="mh"><span class="q"><i data-lucide="${sc >= 0.8 ? "badge-check" : "badge"}"></i>${m}</span><span class="ed"><i data-lucide="pencil"></i>Edit asset <i data-lucide="plus"></i></span></div><div class="mbar"><i style="width:${(sc * 100).toFixed(0)}%"></i></div>
+          return `<div class="mcard"><div class="mh"><span class="q"><i data-lucide="${sc >= 0.8 ? "badge-check" : "badge"}"></i>${m}</span><span class="ed" data-edit="${esc(a.resource_id)}" style="cursor:pointer" title="Open in the asset inventory"><i data-lucide="pencil"></i>Edit asset</span></div><div class="mbar"><i style="width:${(sc * 100).toFixed(0)}%"></i></div>
             <div class="mb"><div class="as"><b title="${esc(r.name)}"><i data-lucide="${TYPE_ICON[r.type] || "ship"}" style="color:#8abbff"></i>${esc(r.name.replace(/ Response| Unit/g, ""))}</b>${cap(r).split(" · ").slice(0, 3).map((c) => `<small>${esc(c)}</small>`).join("")}</div><i data-lucide="arrow-right" style="color:#738091"></i><div class="tg"><b><i data-lucide="crosshair"></i>${esc(a.task.split(/[,;.(]/)[0])}</b><small>ETA +${(+a.eta_h).toFixed(1)} h · score ${sc.toFixed(2)}</small></div></div>
             <div class="mf"><span><span class="live">LIVE</span> (updated ${ago(S.planT)})</span><span>${esc(r.base || "")}</span></div></div>`;
         }).join("");
@@ -96,10 +97,15 @@
     $$("[data-site]", L).forEach((e) => (e.onclick = () => selectObj("site:" + e.dataset.site)));
     $$("[data-res]", L).forEach((e) => (e.onclick = () => { const r = resById(e.dataset.res); const p = Map3D.assetPos(r.id); Map3D.flyTo(p ? Geo.toLonLat(p.x, p.z) : r.lonlat, 16); }));
     $$("[data-go=slick]", L).forEach((e) => (e.onclick = () => selectObj("slick")));
+    $$("[data-lane]", L).forEach((e) => (e.onclick = () => { const s = siteById(e.dataset.lane); Map3D.flyTo(s.path[Math.floor(s.path.length / 2)], 70); }));
+    $$(".lg-h", L).forEach((h) => (h.onclick = () => { const eye = h.querySelector("[data-eye]"); if (eye) eye.click(); }));
     const on = (id, fn) => { const e = $(id, L); if (e) e.onclick = fn; };
     on("#rec-row", () => (S.fc ? openMetrics() : toast('<i data-lucide="info"></i>Run a forecast before asking for taskings', "or")));
     on("#open-metrics", () => S.fc && openMetrics()); on("#lp-opt", openMetrics); on("#re-rec", () => S.fc && openMetrics());
-    const ls = $("#lp-search", L); if (ls) ls.oninput = () => { $("#obj-search").value = ls.value; };
+    const ls = $("#lp-search", L); if (ls) ls.oninput = () => { const v = ls.value.toLowerCase(); $$(".tcard", L).forEach((c) => (c.style.display = c.textContent.toLowerCase().includes(v) ? "" : "none")); };
+    on("#lp-back", () => { S.tab = "targets"; syncRail(); renderLeft(); });
+    on("#lp-collapse", () => $("#app").classList.toggle("lp-collapsed"));
+    $$("[data-edit]", L).forEach((e) => (e.onclick = () => { const r = resById(e.dataset.edit); if (r) { S.hwType = r.type; S.resFilter = r.type; S.resSel = r.id; } setView("res"); }));
   }
   function syncRail() { $$("#rail [data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab)); }
   function selectObj(key) {
@@ -124,8 +130,10 @@
     else if (!S.plan) { t = "Drift forecast"; s = `${S.fc.impacts.filter((i) => (siteById(i.site_id) || {}).kind !== "lane").length} sites at risk · landfall ${S.fc.stats.first_landfall_h != null ? "+" + S.fc.stats.first_landfall_h + " h" : "none"}`; btn = "Task assets"; act = openMetrics; }
     else if (!S.approved) { t = "Response plan"; s = `${S.plan.plan.assignments.length} assignments · awaiting approval`; btn = "Approve"; act = approve; }
     else { t = "In execution"; s = `${S.plan.plan.assignments.length} assets tasked`; btn = "Board"; act = () => setView("board"); }
-    c.innerHTML = `<span class="oi"><i data-lucide="crosshair"></i></span><div><b>${esc(t)}</b><small>${esc(s)}</small></div><span class="tools"><i data-lucide="locate-fixed"></i><i data-lucide="eye"></i><i data-lucide="link"></i><i data-lucide="send"></i></span><button class="go" id="chip-go">${esc(btn)} <i data-lucide="arrow-right"></i></button><button class="xx"><i data-lucide="x"></i></button>`;
-    c.classList.add("on"); icons(c); $("#chip-go").onclick = act;
+    c.innerHTML = `<span class="oi"><i data-lucide="crosshair"></i></span><div><b>${esc(t)}</b><small>${esc(s)}</small></div><button class="tools" id="chip-loc" title="Zoom to object"><i data-lucide="locate-fixed"></i></button><button class="go" id="chip-go">${esc(btn)} <i data-lucide="arrow-right"></i></button><button class="xx" id="chip-x" title="Hide"><i data-lucide="x"></i></button>`;
+    c.classList.toggle("on", S.chipHidden !== t); icons(c); $("#chip-go").onclick = act;
+    $("#chip-loc").onclick = () => Map3D.flyTo(S.slick ? centroid(S.slick) : DEFAULT_LL, S.slick ? 14 : 60);
+    $("#chip-x").onclick = () => { S.chipHidden = t; c.classList.remove("on"); };
   }
 
   // ------------------------------------------------------------------ inspector (object view)
@@ -133,30 +141,37 @@
   const sec = (key, icon, title, body, open) => { const o = S.collapsed[key] == null ? open !== false : !S.collapsed[key]; return `<div class="sec"><div class="sec-h" data-sec="${key}"><i data-lucide="${icon}"></i>${title}<i data-lucide="${o ? "chevron-down" : "chevron-right"}" class="cv"></i></div>${o ? `<div class="sec-b">${body}</div>` : ""}</div>`; };
   function renderInspector() {
     const I = $("#inspector");
-    const head = (ic, cls, t, s) => `<div class="ov-h"><span class="oi ${cls || ""}"><i data-lucide="${ic}"></i></span><div><b>${t}</b><small>${s}</small></div><i data-lucide="x" class="x"></i></div>`;
-    const kv = (rows) => `<div class="kvl">${rows.map(([a, b, c]) => `<span>${a}</span><b class="${c || ""}">${b}</b>`).join("")}</div>`;
+    const head = (ic, cls, t, s) => `<div class="ov-h"><span class="oi ${cls || ""}"><i data-lucide="${ic}"></i></span><div><b>${t}</b><small>${s}</small></div></div>`;
+    const kv = (rows) => `<div class="kvl">${rows.map(([a, b, c, l]) => `<span>${a}</span><b class="${c || ""}"${l ? ` data-link="${l}"` : ""}>${b}</b>`).join("")}</div>`;
     let h = "";
-    if (S.sel && S.sel.startsWith("site:")) {
+    if (S.sel && S.sel.startsWith("res:")) {
+      const r = resById(S.sel.slice(4)) || {}, a = S.plan && S.plan.plan.assignments.find((q) => q.resource_id === r.id);
+      h = head(TYPE_ICON[r.type] || "ship", "bl", esc(r.name), `${TYPE_NAME[r.type] || r.type} · ${esc(r.base)}`) +
+        kv([["Status", a ? (S.approved ? "Tasked" : "Proposed") : r.status], ["Capability", cap(r)], ["Crew", r.crew || "—"], ["Base", esc(r.base), "lk", "res"], ["Data", r.sample ? "sample inventory" : "added by user"]]) +
+        `<div class="btn-row"><button class="bp-btn out" id="back-stage">Back to ${S.stage}</button><button class="bp-btn" id="res-open"><i data-lucide="boxes"></i>Open in inventory</button></div>` +
+        (a ? sec("res-a", "crosshair", "Assignment", `<div class="prop"><span>Task</span><b>${esc(a.task)}</b></div><div class="prop"><span>ETA</span><b>+${(+a.eta_h).toFixed(1)} h</b></div><div class="prop"><span>Why</span><b>${esc(a.reason)}</b></div>`) : "") +
+        sec("res-hw", "box", "3D model", `<canvas id="res-hw" style="width:100%;height:170px;display:block;background:radial-gradient(circle at 50% 45%,#1d2630,#0a0d10)"></canvas>`);
+    } else if (S.sel && S.sel.startsWith("site:")) {
       const s = siteById(S.sel.slice(5)) || {}, im = S.fc && S.fc.impacts.find((i) => i.site_id === s.id), cl = S.plan && (S.plan.plan.closures || []).find((c) => c.site_id === s.id);
       h = head(SITE_ICON[s.kind] || "map-pin", im ? "" : "bl", esc(s.name), `${esc(s.kind)} · ${esc(s.country)}`) +
-        kv([["Status", im ? (S.hour >= im.eta_h ? "Oiled (forecast)" : `At risk · ETA +${im.eta_h} h`) : "Clear"], ["Data source", "SpillSight sites", "lk"], ["Layer", "Sensitive sites", "lk"], ["Position", Geo.fmtLL(s.lonlat || DEFAULT_LL), "mono"], ["Accuracy", "approximate"]]) +
+        kv([["Status", im ? (S.hour >= im.eta_h ? "Oiled (forecast)" : `At risk · ETA +${im.eta_h} h`) : "Clear"], ["Data source", "SpillSight sites", "lk", "data"], ["Layer", "Sensitive sites", "lk", "layers"], ["Position", Geo.fmtLL(s.lonlat || DEFAULT_LL), "mono"], ["Accuracy", "approximate"]]) +
         `<div class="act-row"><button class="bp-btn out w" id="back-stage">Back to ${S.stage} <i data-lucide="chevron-down"></i></button></div>` +
         sec("site-d", "info", "Details", `<div class="prop"><span>Description</span><b>${esc(s.note || "")}</b></div>${im ? `<div class="prop"><span>Particles within 4 km</span><b>${im.n}</b></div>` : ""}${cl ? `<div class="prop"><span>Planned action</span><b>${esc(cl.action)} from +${cl.from_h} h</b></div><div class="prop"><span>Reason</span><b>${esc(cl.reason)}</b></div>` : ""}`);
     } else if (S.stage === "detect") {
       const d = S.det, inst = d && d.instances.slice().sort((a, b) => b.score - a.score)[0];
       h = head("crosshair", "", d ? "Computer Vision Detection" : "New image", d ? "Oil slick · SAM 3.1" : "Satellite, aircraft or drone") +
-        kv([["Latest image", d ? "a few seconds ago" : "—"], ["Data source", S.upload ? "Uploaded image" : "Sentinel-1 SAR (simulated)", "lk"], ["Layer", "Detections", "lk"], ["Model", "SAM 3.1"], ["Confidence", inst ? (inst.score * 100).toFixed(0) + "%" : "—"], ["Area", S.slick ? polyAreaKm2(S.slick).toFixed(2) + " km²" : "—"], ["Classification", "SIMULATED"]]) +
+        kv([["Latest image", d ? "a few seconds ago" : "—"], ["Data source", S.upload ? "Uploaded image" : "Sentinel-1 SAR (simulated)", "lk", "data"], ["Layer", "Detections", "lk", "layers"], ["Model", "SAM 3.1"], ["Confidence", inst ? (inst.score * 100).toFixed(0) + "%" : "—"], ["Area", S.slick ? polyAreaKm2(S.slick).toFixed(2) + " km²" : "—"], ["Classification", "SIMULATED"]]) +
         `<div class="btn-row"><button class="bp-btn" id="d-sample"><i data-lucide="database"></i>Cached result</button><button class="bp-btn blue" id="d-run"><i data-lucide="sparkles"></i>Run SAM 3.1</button></div>` +
         (d ? `<div class="act-row"><button class="bp-btn olive w" id="d-next">Forecast drift <i data-lucide="arrow-right"></i></button></div>` : "") +
-        sec("img", "image", "Image preview", `<div class="thumb" id="src"><img src="${S.upload || S.srcImg}" id="src-img"><svg class="ov" id="src-ov" preserveAspectRatio="none"></svg><span class="tg bp-tag ${S.upload ? "blue" : "orange"}">${S.upload ? "UPLOAD" : "SIMULATED · AI-GENERATED"}</span><i data-lucide="expand" class="exp"></i></div>`) +
+        sec("img", "image", "Image preview", `<div class="thumb" id="src"><img src="${S.upload || S.srcImg}" id="src-img"><svg class="ov" id="src-ov" preserveAspectRatio="none"></svg>${S.upload ? '<span class="tg bp-tag blue">UPLOAD</span>' : ""}<button class="exp" id="img-exp" title="Open full size"><i data-lucide="expand"></i></button></div>`) +
         sec("sensor", "satellite", "Sensor", `<div class="sensor"><canvas id="sat-canvas"></canvas><div><b>Sentinel-1 SAR pass</b><small>C-band radar shows oil as dark, smooth water, through cloud and at night.</small></div></div>`) +
         sec("prompt", "text-cursor-input", "Prompt & source", `<label class="field">Concept prompt<input id="d-prompt" value="dark oil slick"></label><label class="field">Upload image<input type="file" id="d-file" accept="image/*"></label><div style="color:#738091;margin-top:6px">Live run $0.0025. Footprint 6 km wide at ${Geo.fmtLL(S.footprintCenter || DEFAULT_LL)}; right-click the map to move it.</div>`, !d) +
-        sec("props", "list", "Properties", `<div class="subh">Featured properties <i data-lucide="chevron-down"></i></div><div class="prop"><span>Timestamp</span><b>${new Date(S.detT || Date.now()).toUTCString().replace("GMT", "UTC")}</b></div><div class="prop"><span>Centre</span><b>${S.slick ? Geo.fmtLL(centroid(S.slick)) : "—"}</b></div><div class="prop"><span>API cost</span><b>$${d ? (d.cost_usd || 0).toFixed(4) : "0.0000"}</b></div><div class="subh">Additional properties <i data-lucide="chevron-right"></i></div>`, !!d) +
+        sec("props", "list", "Properties", `<div class="subh">Featured properties</div><div class="prop"><span>Timestamp</span><b>${new Date(S.detT || Date.now()).toUTCString().replace("GMT", "UTC")}</b></div><div class="prop"><span>Centre</span><b>${S.slick ? Geo.fmtLL(centroid(S.slick)) : "—"}</b></div><div class="prop"><span>API cost</span><b>$${d ? (d.cost_usd || 0).toFixed(4) : "0.0000"}</b></div><div class="subh">Additional properties</div><div class="prop"><span>Instances</span><b>${d ? d.instances.length : 0}</b></div><div class="prop"><span>Image size</span><b>${d ? d.image_size.join(" × ") + " px" : "—"}</b></div>`, !!d) +
         sec("enh", "circle-plus", "Enhancements", `<div style="color:#8f99a8">Mask decoded from SAM run-length output → contour → simplified polygon → georeferenced to the image footprint.</div>`, false);
     } else if (S.stage === "forecast") {
       const f = S.fc, m = activeMet(), real = f ? f.impacts.filter((i) => (siteById(i.site_id) || {}).kind !== "lane") : [];
       h = head("wind", "bl", "Drift forecast", "Lagrangian particles · 72 h") +
-        kv([["Particles", f ? f.particles : 300], ["Horizon", "72 h"], ["Wind", `${m.wind_kn.toFixed(1)} kn from ${Math.round(m.wind_from_deg)}°`], ["Current", `${m.current_kn.toFixed(2)} kn to ${Math.round(m.current_to_deg)}°`], ["Data source", m.source === "open-meteo" ? "Open-Meteo (live)" : "Shamal scenario (what-if)", "lk"], ["First landfall", f && f.stats.first_landfall_h != null ? "+" + f.stats.first_landfall_h + " h" : "—"], ["Ashore at 24 h", f ? f.stats.ashore_pct["24"] + "%" : "—"]]) +
+        kv([["Particles", f ? f.particles : 300], ["Horizon", "72 h"], ["Wind", `${m.wind_kn.toFixed(1)} kn from ${Math.round(m.wind_from_deg)}°`], ["Current", `${m.current_kn.toFixed(2)} kn to ${Math.round(m.current_to_deg)}°`], ["Data source", m.source === "open-meteo" ? "Open-Meteo (live)" : "Shamal scenario (what-if)", "lk", "data"], ["First landfall", f && f.stats.first_landfall_h != null ? "+" + f.stats.first_landfall_h + " h" : "—"], ["Ashore at 24 h", f ? f.stats.ashore_pct["24"] + "%" : "—"]]) +
         `<div class="act-row"><div class="seg" style="grid-template-columns:1fr 1fr"><button data-met="live" class="${S.metMode === "live" ? "on" : ""}"><i data-lucide="satellite-dish"></i>Live · Open-Meteo</button><button data-met="scenario" class="${S.metMode === "scenario" ? "on" : ""}"><i data-lucide="wind"></i>Shamal scenario</button></div></div>` +
         `<div class="btn-row"><button class="bp-btn blue" id="f-run" ${S.slick ? "" : "disabled"}><i data-lucide="play"></i>${f ? "Re-run" : "Run"} forecast</button>${f ? '<button class="bp-btn olive" id="f-next">Task assets <i data-lucide="arrow-right"></i></button>' : ""}</div>` +
         (f ? sec("risk", "shield-alert", `Shoreline at risk (${real.length})`, real.length ? real.map((im) => { const s = siteById(im.site_id); const live = S.hour >= im.eta_h; return `<div class="rowl" data-site="${s.id}" style="cursor:pointer"><span class="ic"><i data-lucide="${SITE_ICON[s.kind] || "map-pin"}"></i></span><div><b>${esc(s.name)}</b><small>${s.kind} · ${s.country} · ${im.n} particles</small></div><div class="r">+${im.eta_h} h<br><span class="bp-tag ${live ? "red" : "orange"}">${live ? "OILED" : "IN " + Math.max(0, Math.ceil(im.eta_h - S.hour)) + " H"}</span></div></div>`; }).join("") : '<div class="empty">No sensitive site reached within 72 h.</div>') : "") +
@@ -169,7 +184,7 @@
         h = head("sparkles", "vi", "Response plan", `${P.source === "rules" ? "Rules planner (fallback)" : "Muse Spark 1.3"} · ${P.plan.assignments.length} assignments`) +
           `<div class="pairc"><div class="t"><i data-lucide="ship"></i>${P.plan.assignments.length} assets <i data-lucide="arrow-right"></i> Oil slick<span class="bp-tag ${S.approved ? "green" : "orange"}">${S.approved ? "APPROVED" : "PROPOSED"}</span></div><div class="kvl"><span>Time on target</span><b class="mono">${fmtH(Math.min(...P.plan.assignments.map((a) => +a.eta_h || 0)))}</b><span>Created</span><b>${ago(S.planT)} by Muse Spark</b><span>Closures</span><b>${(P.plan.closures || []).length}</b><span>Cost</span><b class="mono">$${(P.cost_usd || 0).toFixed(4)}</b></div></div>` +
           `<div style="padding:0 12px 8px;color:#abb3bf">${esc(P.plan.summary || "")}</div>` +
-          sec("asg", "ship", "Assignments", P.plan.assignments.map((a) => { const r = resById(a.resource_id) || { name: a.resource_id, type: "vessel" }; return `<div class="rowl"><span class="ic"><i data-lucide="${TYPE_ICON[r.type] || "ship"}"></i></span><div><b>${esc(r.name)}</b><small>${esc(a.task)}</small><small style="color:#bdabff;display:block">Why: ${esc(a.reason)}</small></div><div class="r">+${(+a.eta_h).toFixed(1)} h<br><span class="bp-tag vi">${(+a.score).toFixed(2)}</span></div></div>`; }).join("")) +
+          sec("asg", "ship", "Assignments", P.plan.assignments.map((a) => { const r = resById(a.resource_id) || { name: a.resource_id, type: "vessel" }; return `<div class="rowl" data-rsel="${esc(a.resource_id)}" style="cursor:pointer"><span class="ic"><i data-lucide="${TYPE_ICON[r.type] || "ship"}"></i></span><div><b>${esc(r.name)}</b><small>${esc(a.task)}</small><small style="color:#bdabff;display:block">Why: ${esc(a.reason)}</small></div><div class="r">+${(+a.eta_h).toFixed(1)} h<br><span class="bp-tag vi">${(+a.score).toFixed(2)}</span></div></div>`; }).join("")) +
           sec("booms", "waves", "Booms", (P.plan.booms || []).map((b) => `<div class="rowl"><span class="ic" style="color:#fbd065"><i data-lucide="waves"></i></span><div><b>${esc(b.kind)} · ${b.length_m} m at ${b.angle_deg}°</b><small>${esc(b.site_id ? (siteById(b.site_id) || {}).name || b.site_id : "slick leading edge")} — ${esc(b.reason)}</small></div><div></div></div>`).join("")) +
           sec("cl", "ban", "Closures & advisories", (P.plan.closures || []).map((c) => `<div class="rowl"><span class="ic" style="color:#e76a6e"><i data-lucide="ban"></i></span><div><b>${esc(c.action)} · ${esc((siteById(c.site_id) || {}).name || c.site_id)}</b><small>${esc(c.reason)}</small></div><div class="r">+${c.from_h} h</div></div>`).join("") + (P.plan.advisories || []).map((a) => `<div class="rowl"><span class="ic" style="color:#bdabff"><i data-lucide="megaphone"></i></span><div><b>${esc(a.kind)} · ${a.radius_km} km</b><small>${esc(a.reason)}</small></div><div></div></div>`).join("")) +
           sec("risks", "triangle-alert", "Risks flagged", (P.plan.risks || []).map((r) => `<div class="prop"><b>${esc(r)}</b></div>`).join(""), false) +
@@ -179,8 +194,8 @@
       h = head("navigation", "gr", "Execution", S.approved ? `${S.plan.plan.assignments.length} assets tasked` : "No approved plan");
       if (S.approved) {
         const now = performance.now() / 1000;
-        h += kv([["Approved", ago(S.approvedT) + " by RM"], ["Status", S.execDone ? "Boom closed · recovering" : "Assets en route"], ["Layer", "Missions", "lk"]]) +
-          sec("mis", "ship", "Missions", S.plan.plan.assignments.map((a) => { const r = resById(a.resource_id) || { name: a.resource_id, type: "vessel" }; const k = clamp((now - S.execT0 - (a._delay || 0)) / (a._dur || 8), 0, 1); return `<div class="rowl"><span class="ic"><i data-lucide="${TYPE_ICON[r.type] || "ship"}"></i></span><div><b>${esc(r.name)}</b><small>${esc(a.task)}</small><div class="mbar2"><i style="width:${(k * 100).toFixed(0)}%"></i></div></div><div class="r"><span class="bp-tag ${k >= 1 ? "green" : "blue"}">${k >= 1 ? "ON SCENE" : "EN ROUTE"}</span></div></div>`; }).join("")) +
+        h += kv([["Approved", ago(S.approvedT) + " by RM"], ["Status", S.execDone ? "Boom closed · recovering" : "Assets en route"], ["Layer", "Missions", "lk", "board"]]) +
+          sec("mis", "ship", "Missions", S.plan.plan.assignments.map((a) => { const r = resById(a.resource_id) || { name: a.resource_id, type: "vessel" }; const k = clamp((now - S.execT0 - (a._delay || 0)) / (a._dur || 8), 0, 1); return `<div class="rowl" data-rsel="${esc(a.resource_id)}" style="cursor:pointer"><span class="ic"><i data-lucide="${TYPE_ICON[r.type] || "ship"}"></i></span><div><b>${esc(r.name)}</b><small>${esc(a.task)}</small><div class="mbar2"><i style="width:${(k * 100).toFixed(0)}%"></i></div></div><div class="r"><span class="bp-tag ${k >= 1 ? "green" : "blue"}">${k >= 1 ? "ON SCENE" : "EN ROUTE"}</span></div></div>`; }).join("")) +
           sec("act", "activity", "Activity", `<div class="log">${S.log.map((l) => `<div class="ln"><em>${l.t}</em><i style="background:${l.color}"></i><div>${l.msg}</div></div>`).join("")}</div>`);
       } else h += '<div class="empty">Approve a plan to start execution.</div>';
     }
@@ -195,8 +210,13 @@
     const fi = $("#d-file", I); if (fi) fi.addEventListener("change", () => { const f = fi.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { S.upload = rd.result; renderInspector(); }; rd.readAsDataURL(f); });
     $$("[data-met]", I).forEach((b) => (b.onclick = () => { S.metMode = b.dataset.met; renderMet(); renderInspector(); }));
     $$("[data-site]", I).forEach((e) => (e.onclick = () => selectObj("site:" + e.dataset.site)));
+    $$("[data-rsel]", I).forEach((e) => (e.onclick = () => { S.sel = "res:" + e.dataset.rsel; const p = Map3D.assetPos(e.dataset.rsel); if (p) Map3D.flyTo(Geo.toLonLat(p.x, p.z), 14); renderInspector(); }));
     on("#f-run", runForecast); on("#f-next", openMetrics); on("#p-open", openMetrics); on("#p-re", openMetrics); on("#p-ok", approve);
     on("#back-stage", () => { S.sel = null; renderInspector(); renderLeft(); });
+    on("#res-open", () => { const r = resById(S.sel.slice(4)); if (r) { S.hwType = r.type; S.resFilter = r.type; S.resSel = r.id; } setView("res"); });
+    if ($("#res-hw", I)) HW.viewer($("#res-hw", I)).show((resById(S.sel.slice(4)) || {}).type || "vessel");
+    $$("[data-link]", I).forEach((e) => (e.onclick = () => { const l = e.dataset.link; if (l === "layers") { S.tab = "layers"; syncRail(); renderLeft(); } else setView(l); }));
+    on("#img-exp", () => { $("#mbox").innerHTML = `<div class="mm-h" style="font-size:14px">Image preview<span class="ic"><i data-lucide="x" id="lb-x" style="cursor:pointer"></i></span></div><div class="lightbox" style="position:relative"><img src="${S.upload || S.srcImg}"><svg class="ov" style="position:absolute;inset:0;width:100%;height:100%" preserveAspectRatio="none" viewBox="${$("#src-ov") ? $("#src-ov").getAttribute("viewBox") || "" : ""}">${$("#src-ov") ? $("#src-ov").innerHTML : ""}</svg></div>`; $("#mbox").style.width = "auto"; $("#modal").classList.add("on"); icons($("#mbox")); $("#lb-x").onclick = () => { $("#modal").classList.remove("on"); $("#mbox").style.width = ""; }; });
     on("#p-reject", () => { S.plan = null; Map3D.setBooms([]); S.board = S.board.filter((c) => c.kind !== "asg"); moveCards((c) => c.kind !== "asg", "pairing"); renderInspector(); renderLeft(); toast('<i data-lucide="x"></i>Plan rejected', "rd"); });
   }
   function drawSrcOverlay() {
@@ -270,6 +290,7 @@
       const c = centroid(pts); const spread = Math.max(...pts.map((p) => Geo.km(p, c)));
       Map3D.flyTo(c, clamp(spread * 2.6, 40, 150), { el: 0.9 });
       play(0);
+      if (S.contOpt && S.plan && !S.approved) { toast('<i data-lucide="refresh-cw"></i>Forecast changed: re-planning', "vi"); setTimeout(runPlan, 300); }
       log(`Forecast · ${f.particles} particles · landfall ${f.stats.first_landfall_h != null ? "+" + f.stats.first_landfall_h + " h" : "none"} · ${real.length} sites at risk`, "#4c90f0");
       renderLeft();
     } catch (e) { toast(`<i data-lucide="triangle-alert"></i>Forecast failed: ${esc(e.message)}`, "rd"); }
@@ -300,21 +321,22 @@
     if (!S.fc) { toast('<i data-lucide="info"></i>Run a forecast first', "or"); return; }
     const W = S.weights, ready = S.resources.filter((r) => r.status === "ready"), real = S.fc.impacts.filter((i) => (siteById(i.site_id) || {}).kind !== "lane");
     const draw = () => {
-      $("#mbox").innerHTML = `<div class="mm-h">Choose which metrics AI should prioritize<span class="ic"><i data-lucide="info"></i><i data-lucide="settings"></i><i data-lucide="x" id="mm-x" style="cursor:pointer"></i></span></div>
+      $("#mbox").innerHTML = `<div class="mm-h">Choose which metrics AI should prioritize<span class="ic"><button id="mm-info" title="How the recommender works"><i data-lucide="info"></i></button><button id="mm-x" title="Close"><i data-lucide="x"></i></button></span></div>${S.mmHelp ? `<div class="metric-help">Each gauge is a weight sent to <b>Muse Spark 1.3</b> with the live forecast, threatened sites and every ready asset (distance and ETA computed on the server). It returns strict JSON: one assignment per asset with a score and a plain-English reason, plus booms, closures and advisories. Same inputs are cached, so re-running costs nothing; new inputs cost about $0.02. Without a key the rules planner answers instead.</div>` : ""}
         <div class="mm-ctx"><span><b>${ready.length}</b> ready assets</span><span><b>${real.length}</b> threatened sites</span><span>first landfall <b>${S.fc.stats.first_landfall_h != null ? "+" + S.fc.stats.first_landfall_h + " h" : "none"}</b></span><span>model <b>Muse Spark 1.3</b></span></div>
-        <div class="gauges">${METRICS.map(([k, n]) => `<div class="gauge"><div class="t">${n}<span class="x">×</span></div>${gaugeSVG(W[k])}<div class="st"><button data-m="${k}" data-d="-10">−</button>${W[k]}<button data-m="${k}" data-d="10">+</button></div></div>`).join("")}</div>
-        <div class="mm-more">Show all metrics (+4)</div>
-        <div class="mm-f"><button id="mm-go"><i data-lucide="hammer"></i>Optimize Recommender</button><button id="mm-cont"><i data-lucide="${S.contOpt ? "refresh-cw" : "pause"}"></i>Continuous Optimization ${S.contOpt ? "On" : "Off"}</button></div>`;
+        <div class="gauges">${METRICS.map(([k, n]) => `<div class="gauge"><div class="t">${n}<span class="x" data-z="${k}" title="Ignore this metric">×</span></div>${gaugeSVG(W[k])}<div class="st"><button data-m="${k}" data-d="-10">−</button>${W[k]}<button data-m="${k}" data-d="10">+</button></div></div>`).join("")}</div>
+        <div class="mm-f"><button id="mm-go"><i data-lucide="hammer"></i>Optimize Recommender</button><button id="mm-cont"><i data-lucide="${S.contOpt ? "refresh-cw" : "pause"}"></i>Auto re-plan on new forecast: ${S.contOpt ? "On" : "Off"}</button></div>`;
       icons($("#mbox"));
       $$("[data-m]").forEach((b) => (b.onclick = () => { W[b.dataset.m] = clamp(W[b.dataset.m] + +b.dataset.d, 0, 100); draw(); }));
       $("#mm-x").onclick = () => $("#modal").classList.remove("on");
+      $("#mm-info").onclick = () => { S.mmHelp = !S.mmHelp; draw(); };
+      $$("[data-z]").forEach((b) => (b.onclick = () => { W[b.dataset.z] = 0; draw(); }));
       $("#mm-cont").onclick = () => { S.contOpt = !S.contOpt; draw(); };
       $("#mm-go").onclick = runPlan;
     };
     draw(); $("#modal").classList.add("on");
   }
   async function runPlan() {
-    const b = $("#mm-go"); b.disabled = true; b.innerHTML = '<i data-lucide="loader"></i>Muse Spark is optimising…'; icons(b);
+    const b = $("#mm-go") || { set innerHTML(v) {}, set disabled(v) {} }; b.disabled = true; b.innerHTML = '<i data-lucide="loader"></i>Muse Spark is optimising…'; if (b.nodeType) icons(b);
     try {
       const W = S.weights, tot = W.time + W.capacity + W.distance || 1;
       const impacts = S.fc.impacts.map((im) => { const s = siteById(im.site_id) || {}; return { ...im, name: s.name, kind: s.kind, lonlat: s.lonlat }; });
@@ -381,7 +403,7 @@
   // ------------------------------------------------------------------ map context menu
   function ctxMenu(ll, e) {
     const m = $("#ctx"), r = $("#view-ops").getBoundingClientRect();
-    m.innerHTML = `<div class="it"><i data-lucide="locate"></i><span class="mono">${Geo.fmtLL(ll)}</span><i data-lucide="sliders-horizontal" class="r"></i></div><div class="it dis"><i data-lucide="mountain"></i><span class="mono">sea level</span></div><div class="it dis"><i data-lucide="ruler"></i>Measure distance</div>
+    m.innerHTML = `<div class="it" data-a="copy"><i data-lucide="locate"></i><span class="mono">${Geo.fmtLL(ll)}</span><i data-lucide="copy" class="r"></i></div><div class="it" data-a="measure"><i data-lucide="ruler"></i>${S.measureA ? "Measure to here" : "Measure distance from here"}</div>
       <div class="it" data-a="nominate"><i data-lucide="circle-plus"></i>Nominate to board</div><div class="it" data-a="foot"><i data-lucide="image"></i>Place image footprint here</div><div class="it" data-a="met"><i data-lucide="wind"></i>Met-ocean at this point</div><hr><div class="it" data-a="base"><i data-lucide="map"></i>Basemap: ${Map3D.getBasemap() === "dark" ? "satellite" : "dark"}</div>`;
     m.style.left = clamp(e.clientX - r.left, 0, r.width - 230) + "px"; m.style.top = clamp(e.clientY - r.top, 0, r.height - 230) + "px"; m.classList.add("on"); icons(m);
     $$("[data-a]", m).forEach((it) => (it.onclick = (ev) => {
@@ -390,7 +412,22 @@
       if (it.dataset.a === "foot") { S.footprintCenter = ll; setStage("detect"); toast(`<i data-lucide="image"></i>Image footprint centred on ${Geo.fmtLL(ll)}`, "or"); }
       if (it.dataset.a === "met") { S.metMode = "live"; fetchMet(ll); toast(`<i data-lucide="wind"></i>Live met-ocean at ${Geo.fmtLL(ll)}`, "or"); }
       if (it.dataset.a === "base") toggleBase();
+      if (it.dataset.a === "copy") { navigator.clipboard && navigator.clipboard.writeText(Geo.fmtLL(ll)); toast(`<i data-lucide="copy"></i>Copied ${Geo.fmtLL(ll)}`); }
+      if (it.dataset.a === "measure") measure(ll);
     }));
+  }
+  function measure(ll) {
+    if (!S.measureA) { S.measureA = ll; Map3D.clearMarkers("measure"); Map3D.marker({ kind: "site", icon: "ruler", label: "A", lonlat: ll, group: "measure" }); toast('<i data-lucide="ruler"></i>Point A set. Right-click another point and choose “Measure to here”.', "or"); return; }
+    const a = S.measureA, d = Geo.km(a, ll), brg = (Math.atan2((ll[0] - a[0]) * Math.cos((a[1] * Math.PI) / 180), ll[1] - a[1]) * 180 / Math.PI + 360) % 360;
+    Map3D.marker({ kind: "site", icon: "ruler", label: `B · ${d.toFixed(1)} km`, sub: `${(d / 1.852).toFixed(1)} nm · bearing ${brg.toFixed(0)}°`, lonlat: ll, group: "measure" });
+    toast(`<i data-lucide="ruler"></i>${d.toFixed(2)} km (${(d / 1.852).toFixed(2)} nm), bearing ${brg.toFixed(0)}°. At 12 kn: ${(d / 1.852 / 12).toFixed(1)} h.`);
+    S.measureA = null; setTimeout(() => Map3D.clearMarkers("measure"), 12000);
+  }
+  function nearby() {
+    const p = S.lastLL || (S.slick ? centroid(S.slick) : DEFAULT_LL);
+    const ss = S.sites.filter((s) => s.lonlat).map((s) => [s, Geo.km(p, s.lonlat)]).sort((a, b) => a[1] - b[1]).slice(0, 3);
+    const rr = S.resources.map((r) => { const q = Map3D.assetPos(r.id); return [r, Geo.km(p, q ? Geo.toLonLat(q.x, q.z) : r.lonlat)]; }).sort((a, b) => a[1] - b[1]).slice(0, 3);
+    toast(`<div><b>Nearest to ${Geo.fmtLL(p)}</b><br>${ss.map(([s, d]) => `${esc(s.name)} · ${d.toFixed(1)} km`).join("<br>")}<br><span style="color:#8abbff">${rr.map(([r, d]) => `${esc(r.name)} · ${d.toFixed(1)} km`).join("<br>")}</span></div>`);
   }
   function toggleBase() { Map3D.setBasemap(Map3D.getBasemap() === "dark" ? "sat" : "dark"); $("#t-base").classList.toggle("on", Map3D.getBasemap() === "sat"); }
   document.addEventListener("click", (e) => { if (!e.target.closest("#ctx")) $("#ctx").classList.remove("on"); });
@@ -404,7 +441,7 @@
     const types = ["all", "vessel", "boom", "skimmer", "storage", "drone", "aircraft"];
     $("#res-filters").innerHTML = types.map((t) => `<button data-f="${t}" class="${S.resFilter === t ? "on" : ""}">${t === "all" ? "All" : `<i data-lucide="${TYPE_ICON[t]}"></i>${TYPE_NAME[t].split(" ").pop()}`}</button>`).join("");
     const rows = S.resources.filter((r) => S.resFilter === "all" || r.type === S.resFilter);
-    $("#res-table").innerHTML = `<tr><th>Asset</th><th>Type</th><th>Base</th><th>Capability</th><th>Status</th><th></th></tr>` + rows.map((r) => `<tr data-id="${r.id}"><td><div class="nm"><i data-lucide="${TYPE_ICON[r.type]}"></i>${esc(r.name)}${r.sample ? ' <span class="bp-tag">SAMPLE</span>' : ""}</div></td><td>${TYPE_NAME[r.type] || r.type}</td><td>${esc(r.base)}</td><td style="color:#abb3bf">${cap(r)}</td><td><span class="bp-tag ${r.status === "ready" ? "green" : r.status === "busy" ? "orange" : "red"}">${r.status.toUpperCase()}</span></td><td><button class="del" data-del="${r.id}" title="Remove"><i data-lucide="trash-2"></i></button></td></tr>`).join("");
+    $("#res-table").innerHTML = `<tr><th>Asset</th><th>Type</th><th>Base</th><th>Capability</th><th>Status</th><th></th></tr>` + rows.map((r) => `<tr data-id="${r.id}" style="${S.resSel === r.id ? "outline:1px solid #b6c94a;outline-offset:-1px" : ""}"><td><div class="nm"><i data-lucide="${TYPE_ICON[r.type]}"></i>${esc(r.name)}${r.sample ? ' <span class="bp-tag">SAMPLE</span>' : ""}</div></td><td>${TYPE_NAME[r.type] || r.type}</td><td>${esc(r.base)}</td><td style="color:#abb3bf">${cap(r)}</td><td><span class="bp-tag ${r.status === "ready" ? "green" : r.status === "busy" ? "orange" : "red"}">${r.status.toUpperCase()}</span></td><td><button class="del" data-del="${r.id}" title="Remove"><i data-lucide="trash-2"></i></button></td></tr>`).join("");
     $("#res-type").innerHTML = Object.keys(TYPE_ICON).map((t) => `<button type="button" data-t="${t}" class="${S.hwType === t ? "on" : ""}"><i data-lucide="${TYPE_ICON[t]}"></i>${TYPE_NAME[t].split(" ").pop()}</button>`).join("");
     $("#res-base").innerHTML = Object.keys(BASES).map((b) => `<option>${b}</option>`).join("");
     $("#res-specs").innerHTML = SPEC[S.hwType].map(([k, l, v]) => `<label>${l}<input name="${k}" type="number" step="any" value="${v}"></label>`).join("");
@@ -413,7 +450,7 @@
     icons($("#view-res"));
     $$("#res-filters button").forEach((b) => (b.onclick = () => { S.resFilter = b.dataset.f; renderResources(); }));
     $$("#res-type button").forEach((b) => (b.onclick = () => { S.hwType = b.dataset.t; renderResources(); }));
-    $$("#res-table tr[data-id]").forEach((tr) => (tr.onclick = () => { S.hwType = resById(tr.dataset.id).type; renderResources(); }));
+    $$("#res-table tr[data-id]").forEach((tr) => (tr.onclick = () => { S.hwType = resById(tr.dataset.id).type; S.resSel = tr.dataset.id; renderResources(); }));
     $$("[data-del]").forEach((b) => (b.onclick = async (ev) => { ev.stopPropagation(); try { await API.delResource(b.dataset.del); await loadResources(); toast('<i data-lucide="trash-2"></i>Asset removed', "or"); } catch (e) { toast("Remove failed: " + esc(e.message), "rd"); } }));
   }
   $("#res-form").addEventListener("submit", async (ev) => {
@@ -425,7 +462,7 @@
   async function loadResources() {
     S.resources = await API.resources();
     Map3D.setAssets(S.resources); Map3D.clearMarkers("assets");
-    S.resources.forEach((r) => Map3D.marker({ kind: "asset", icon: TYPE_ICON[r.type], label: r.name, sub: `${TYPE_NAME[r.type]} · ${r.base}`, group: "assets", get: () => Map3D.assetPos(r.id) }));
+    S.resources.forEach((r) => Map3D.marker({ kind: "asset", icon: TYPE_ICON[r.type], label: r.name, sub: `${TYPE_NAME[r.type]} · ${r.base}`, group: "assets", get: () => Map3D.assetPos(r.id), onClick: () => { S.sel = "res:" + r.id; if (S.view !== "ops") setView("ops"); renderInspector(); } }));
     renderLeft(); if (S.view === "res") renderResources();
   }
 
@@ -449,7 +486,7 @@
   // ------------------------------------------------------------------ views + boot
   function setView(v) {
     S.view = v; $$(".view").forEach((e) => e.classList.toggle("on", e.id === "view-" + v)); $$("#menu [data-view]").forEach((b) => b.classList.toggle("on", b.dataset.view === v));
-    if (v === "board") renderBoard(); if (v === "res") renderResources(); if (v === "data") renderData();
+    if (v === "board") { S.sawBoard = true; renderBoard(); } if (v === "res") renderResources(); if (v === "data") renderData();
   }
   $$("#menu [data-view]").forEach((b) => (b.onclick = () => setView(b.dataset.view)));
   $$("[data-view-btn]").forEach((b) => (b.onclick = () => setView(b.dataset.viewBtn)));
@@ -465,10 +502,83 @@
   setInterval(() => { const d = new Date(); $("#utc").textContent = d.toUTCString().slice(5, 16).toUpperCase() + " " + d.toISOString().slice(11, 19) + "Z"; }, 1000);
   setInterval(() => { if (S.stage === "execute" && S.approved) renderInspector(); if (S.view === "board") renderBoard(); }, 1000);
 
+  // ------------------------------------------------------------------ menus, export, top-bar actions
+  function exportReport() {
+    const rep = { incident: "HZ-01 Strait of Hormuz (simulated)", exported_utc: new Date().toISOString(),
+      detection: S.det ? { model: S.det.model || "sam-3.1", cached: !!S.det.cached, score: Math.max(...S.det.instances.map((i) => i.score)), area_km2: +polyAreaKm2(S.slick).toFixed(3), polygon_lonlat: S.slick } : null,
+      metocean: activeMet(), forecast: S.fc ? { stats: S.fc.stats, impacts: S.fc.impacts.map((i) => ({ ...i, name: (siteById(i.site_id) || {}).name })) } : null,
+      plan: S.plan ? { source: S.plan.source, cost_usd: S.plan.cost_usd, ...S.plan.plan, approved: S.approved, approved_utc: S.approvedT ? new Date(S.approvedT).toISOString() : null } : null,
+      board: S.board.map(({ id, kind, title, sub, col }) => ({ id, kind, title, sub, column: col })), activity: S.log };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(rep, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = `spillsight-HZ-01-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "")}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast('<i data-lucide="download"></i>Incident report downloaded'); log("Incident report exported", "#8abbff");
+  }
+  function summary() {
+    const lines = [`HZ-01 Strait of Hormuz (simulated) · ${new Date().toUTCString()}`];
+    if (S.det) lines.push(`Detection: oil slick ${polyAreaKm2(S.slick).toFixed(2)} km² at ${Geo.fmtLL(centroid(S.slick))} (SAM 3.1)`);
+    if (S.fc) lines.push(`Forecast: first landfall ${S.fc.stats.first_landfall_h != null ? "+" + S.fc.stats.first_landfall_h + " h" : "none"}; at risk: ${S.fc.impacts.map((i) => (siteById(i.site_id) || {}).name).join(", ")}`);
+    if (S.plan) lines.push(`Plan (${S.plan.source}): ${S.plan.plan.assignments.length} assignments, ${(S.plan.plan.closures || []).length} closures${S.approved ? ", APPROVED" : ", awaiting approval"}`);
+    return lines.join("\n");
+  }
+  const MENUS = {
+    file: [["download", "Export incident report (JSON)", exportReport], ["copy", "Copy summary to clipboard", () => { navigator.clipboard && navigator.clipboard.writeText(summary()); toast('<i data-lucide="copy"></i>Summary copied'); }], null, ["rotate-ccw", "New incident (reset)", () => location.reload()]],
+    tools: [["map", "Basemap: dark / satellite", toggleBase], ["route", "Trajectories on / off", () => $("#t-tracks").click()], ["waypoints", "Traffic lanes on / off", () => $("#t-lanes").click()], ["crosshair", "Reset view", () => $("#t-home").click()], null, ["ruler", "Measure distance", () => toast('<i data-lucide="ruler"></i>Right-click the map and choose “Measure distance from here”.', "or")], ["search", "Search nearby", nearby]],
+    help: [["circle-help", "Guided walkthrough", () => startGuide()], ["mouse-pointer-2", "Map controls", () => toast('<i data-lucide="mouse-pointer-2"></i>Drag to rotate · right-drag or shift-drag to pan · scroll to zoom · right-click for tools · click any marker to inspect it', "or")], ["database", "Models & data sources", () => setView("data")]],
+  };
+  function openMenu(key, btn) {
+    const dd = $("#dd"), r = btn.getBoundingClientRect();
+    dd.innerHTML = MENUS[key].map((m, i) => (m ? `<div class="it" data-i="${i}"><i data-lucide="${m[0]}"></i>${m[1]}</div>` : "<hr>")).join("");
+    dd.style.left = r.left + "px"; dd.style.top = r.bottom + 2 + "px"; dd.classList.add("on"); icons(dd);
+    $$("[data-i]", dd).forEach((e) => (e.onclick = (ev) => { ev.stopPropagation(); dd.classList.remove("on"); MENUS[key][+e.dataset.i][2](); }));
+  }
+  $$("#menu [data-dd]").forEach((b) => (b.onclick = (ev) => { ev.stopPropagation(); openMenu(b.dataset.dd, b); }));
+  document.addEventListener("click", () => $("#dd").classList.remove("on"));
+  $("#export").onclick = exportReport;
+  $("#bell").onclick = () => { S.tab = "alerts"; syncRail(); renderLeft(); if (S.view !== "ops") setView("ops"); };
+  $("#budget").onclick = () => setView("data");
+  $("#srv").onclick = async () => { await refreshBudget(); toast(`<i data-lucide="activity"></i>${esc($("#srv").title)}`, $("#srv").classList.contains("ok") ? "" : "rd"); };
+  $("#rail-guide").onclick = () => startGuide();
+  $("#t-layers").onclick = () => { S.tab = "layers"; syncRail(); renderLeft(); };
+  $("#compass").onclick = () => Map3D.flyTo(Geo.toLonLat(Map3D.cam.tx, Map3D.cam.tz), Map3D.cam.dist, { az: 0, dur: 0.8 });
+  $("#nearby").onclick = nearby;
+  $("#b-add").onclick = () => { card("det", "Reported sighting", S.lastLL ? Geo.fmtLL(S.lastLL) : "manual entry", "detected", { tot: "Time on target:unassessed", warn: true }); log("Sighting added to board", "#ec9a3c"); };
+  $("#b-search").oninput = renderBoard;
+  $("#b-filter").onclick = (e) => { S.bWarn = !S.bWarn; e.currentTarget.style.color = S.bWarn ? "#b6c94a" : ""; renderBoard(); };
+  $("#b-sort").onclick = (e) => { S.bSort = S.bSort === "eta" ? "new" : "eta"; e.currentTarget.lastChild.textContent = S.bSort === "eta" ? "Sort: time on target" : "Sort: newest"; renderBoard(); };
+  $("#b-guide").onclick = () => startGuide();
+
+  // ------------------------------------------------------------------ guided walkthrough (every step runs the real pipeline)
+  const GUIDE = [
+    { t: "Detect oil with Meta SAM 3.1", p: "Click <em>Run SAM 3.1</em> in the right panel. The image is sent to Meta's SAM 3.1 model (live, $0.0025) and the oil outline lands on the map. <em>Cached result</em> replays a saved real response for free.", sel: () => ($("#d-run") ? "#d-run" : "#chip-go"), done: () => !!S.det },
+    { t: "Forecast where the oil drifts", p: "Click <em>Forecast drift →</em>. 300 particles drift for 72 h with wind and current and stop at the coastline. Pick <em>Live · Open-Meteo</em> in the forecast panel to use today's real weather.", sel: () => ($("#d-next") ? "#d-next" : "#chip-go"), done: () => !!S.fc },
+    { t: "Ask the AI to task assets", p: "Click <em>Task assets →</em>, tune the gauges with − / +, then press <em>Optimize Recommender</em>. Muse Spark 1.3 writes the plan live (about 30 s; identical inputs are cached).", sel: () => ($("#modal").classList.contains("on") ? "#mm-go" : $("#f-next") ? "#f-next" : "#chip-go"), done: () => !!S.plan },
+    { t: "Review the reasons, then approve", p: "Each assignment carries a <em>Why</em>. Click any site or asset marker to inspect it. Then click <em>Approve →</em>, or Reject / Reassign to change it.", sel: () => "#p-ok", done: () => S.approved },
+    { t: "Watch the response run", p: "Vessels sail from their bases and the U-boom closes around the slick. Open the <em>Board</em> to see each card move as its asset arrives.", sel: () => '#menu [data-view="board"]', done: () => !!S.sawBoard },
+    { t: "Use your own data", p: "Add an asset in <em>Assets</em>, upload your own image in Detect, right-click the map to measure or nominate a sighting, or <em>Export</em> the incident report.", sel: () => "#export", done: () => false },
+  ];
+  S.guideOn = true;
+  function startGuide() { S.guideOn = true; S.guideIdx = -1; tickGuide(); }
+  function tickGuide() {
+    const G = $("#guide");
+    $$(".pulse").forEach((e) => e.classList.remove("pulse"));
+    if (!S.guideOn) { G.classList.remove("on"); return; }
+    const i = Math.max(0, GUIDE.findIndex((g) => !g.done())), g = GUIDE[i];
+    if (i !== S.guideIdx) {
+      S.guideIdx = i;
+      G.innerHTML = `<div class="gh"><i data-lucide="compass"></i>GUIDE · STEP ${i + 1} OF ${GUIDE.length}<button class="x" id="g-x" title="Hide guide"><i data-lucide="x"></i></button></div><div class="gs">${GUIDE.map((q, k) => `<i class="${k < i ? "d" : k === i ? "c" : ""}"></i>`).join("")}</div>
+        <div class="gb"><b>${g.t}</b><p>${g.p}</p></div><div class="gf"><button class="bp-btn olive" id="g-show"><i data-lucide="mouse-pointer-click"></i>Show me</button><button class="bp-btn min" id="g-hide">Hide guide</button></div>`;
+      G.classList.add("on"); icons(G);
+      $("#g-x").onclick = $("#g-hide").onclick = () => { S.guideOn = false; tickGuide(); };
+      $("#g-show").onclick = () => { const sel = GUIDE[S.guideIdx].sel(); if (sel.startsWith("#menu") || sel === "#export") { const el = $(sel); el && el.scrollIntoView({ block: "nearest" }); return; } if (S.view !== "ops") setView("ops"); const el = $(sel); if (el) el.scrollIntoView({ block: "center", behavior: "smooth" }); };
+    }
+    const el = $(g.sel()); if (el) el.classList.add("pulse");
+  }
+  setInterval(tickGuide, 500);
+
   async function boot() {
     await Geo.load();
     Map3D.init($("#map"));
-    Map3D.onPick((ll, e, right) => { $("#cursor-ll").textContent = Geo.fmtLL(ll); if (right || e.button === 2) ctxMenu(ll, e); else $("#ctx").classList.remove("on"); });
+    Map3D.onPick((ll, e, right) => { S.lastLL = ll; $("#cursor-ll").textContent = Geo.fmtLL(ll); $("#cursor-el").textContent = S.slick ? `${Geo.km(ll, centroid(S.slick)).toFixed(1)} km to slick` : "no slick yet"; if (right || e.button === 2) ctxMenu(ll, e); else $("#ctx").classList.remove("on"); });
     Map3D.onFrame((t) => {
       Map3D.setClock(t);
       const c = Map3D.cam; $("#compass").style.transform = `rotate(${((c.az * 180) / Math.PI).toFixed(0)}deg)`;

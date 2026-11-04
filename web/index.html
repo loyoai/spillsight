@@ -11,18 +11,17 @@
 <div id="app">
   <!-- application bar -->
   <header class="appbar">
-    <button class="ab-ico" title="Workspaces"><i data-lucide="grid-3x3"></i></button>
     <span class="ab-glyph"><i data-lucide="droplet"></i></span>
-    <span class="ab-doc">HZ-01 Strait of Hormuz <i data-lucide="star"></i></span>
+    <span class="ab-doc">HZ-01 Strait of Hormuz</span>
     <span class="ab-sim">SIMULATED</span>
     <nav class="menu" id="menu">
-      <button>File</button><button>Edit</button><button data-view="ops" class="on">Map</button><button data-view="board">Board</button><button data-view="res">Assets</button><button data-view="data">Data</button><button>Tools</button><button>Help</button>
+      <button data-dd="file">File</button><button data-view="ops" class="on">Map</button><button data-view="board">Board</button><button data-view="res">Assets</button><button data-view="data">Data</button><button data-dd="tools">Tools</button><button data-dd="help">Help</button>
     </nav>
     <div class="ab-r">
-      <span class="ab-stat" id="srv" title="Server"><i data-lucide="activity"></i></span>
-      <span class="ab-stat" id="budget" title="Meta API spend against the $2 cap"><i data-lucide="gauge"></i><span>$0.00</span></span>
-      <span class="ab-stat"><i data-lucide="bell"></i><em id="board-count">0</em></span>
-      <button class="ab-share"><i data-lucide="share-2"></i>Share <b>3</b></button>
+      <button class="ab-stat" id="srv" title="Server status"><i data-lucide="activity"></i></button>
+      <button class="ab-stat" id="budget" title="Meta API spend against the $2 cap (opens Data)"><i data-lucide="gauge"></i><span>$0.00</span></button>
+      <button class="ab-stat" id="bell" title="Activity"><i data-lucide="bell"></i><em id="board-count">0</em></button>
+      <button class="ab-share" id="export" title="Download the incident report (JSON)"><i data-lucide="download"></i>Export</button>
       <label class="ab-search"><i data-lucide="search"></i><input placeholder="Search" id="obj-search"></label>
     </div>
   </header>
@@ -37,7 +36,7 @@
     <button data-view-btn="board" title="Board"><i data-lucide="kanban"></i></button>
     <button data-view-btn="res" title="Assets"><i data-lucide="boxes"></i></button>
     <button data-view-btn="data" title="Data"><i data-lucide="database"></i></button>
-    <button title="Settings"><i data-lucide="settings"></i></button>
+    <button id="rail-guide" title="Guided walkthrough"><i data-lucide="circle-help"></i></button>
   </nav>
 
   <!-- left panel -->
@@ -57,12 +56,11 @@
         <button id="t-base" title="Basemap: dark / satellite"><i data-lucide="map"></i></button>
       </div>
       <div class="vtools vtools-r">
-        <button title="Layers"><i data-lucide="panels-top-left"></i></button>
-        <button title="Lock"><i data-lucide="lock"></i></button>
-        <div class="compass" id="compass"><i data-lucide="navigation-2"></i></div>
+        <button id="t-layers" title="Map layers"><i data-lucide="layers"></i></button>
+        <button class="compass" id="compass" title="Reset north"><i data-lucide="navigation-2"></i></button>
         <div class="tilt"><span id="tilt-v">25°</span><div class="tilt-bar"><i id="tilt-i"></i></div></div>
       </div>
-      <div class="coordw" id="coordw"><span><i data-lucide="locate"></i><b id="cursor-ll">26.470°N 56.520°E</b></span><span><i data-lucide="mountain"></i><b id="cursor-el">−0.0 m</b></span><span class="sn"><i data-lucide="search"></i>Search nearby</span></div>
+      <div class="coordw" id="coordw"><span><i data-lucide="locate"></i><b id="cursor-ll">26.470°N 56.520°E</b></span><span><i data-lucide="ruler"></i><b id="cursor-el">click the map</b></span><button class="sn" id="nearby"><i data-lucide="search"></i>Search nearby</button></div>
       <div class="met" id="met"></div>
       <div class="timeline" id="timeline">
         <button id="tl-play" title="Play"><i data-lucide="play"></i></button>
@@ -70,23 +68,20 @@
         <span class="tl-mode" id="tl-mode">NO FORECAST</span>
         <div class="tl-track" id="tl-track"><div class="tl-fill" id="tl-fill"></div><div class="tl-knob" id="tl-knob"></div><div class="tl-marks" id="tl-marks"></div></div>
       </div>
-      <div class="statusbar"><span id="sb-n">N/A</span><span><i data-lucide="sliders-vertical"></i></span><span id="sb-scale">5 km</span><span class="dt" id="utc">— Z</span></div>
+      <div class="statusbar"><span id="sb-n">WGS 84</span><span id="sb-scale">5 km</span><span class="dt" id="utc">— Z</span></div>
       <div class="ctxmenu" id="ctx"></div>
     </section>
 
     <section id="view-board" class="view">
       <div class="btoolbar">
-        <button class="bp-btn green"><i data-lucide="plus"></i>Add <i data-lucide="chevron-down"></i></button>
-        <label class="bp-input"><i data-lucide="search"></i><input placeholder="Search…"></label>
-        <button class="bp-btn min"><i data-lucide="filter"></i>Filter</button>
-        <button class="bp-btn min"><i data-lucide="arrow-down-wide-narrow"></i>Sort by</button>
-        <button class="bp-btn min"><i data-lucide="layout-grid"></i>Group by <i data-lucide="chevron-down"></i></button>
+        <button class="bp-btn green" id="b-add" title="Add a reported sighting card"><i data-lucide="plus"></i>Add sighting</button>
+        <label class="bp-input"><i data-lucide="search"></i><input placeholder="Search cards…" id="b-search"></label>
+        <button class="bp-btn min" id="b-filter" title="Show only cards with warnings"><i data-lucide="filter"></i>Warnings only</button>
+        <button class="bp-btn min" id="b-sort" title="Sort cards by time on target"><i data-lucide="arrow-down-wide-narrow"></i>Sort: newest</button>
         <span class="grow"></span>
-        <span class="bt-tags"><i data-lucide="triangle-alert"></i><em id="bt-warn">0</em></span>
-        <button class="bp-btn min"><i data-lucide="compass"></i>Guidance <i data-lucide="chevron-down"></i></button>
+        <span class="bt-tags" title="Cards with a warning"><i data-lucide="triangle-alert"></i><em id="bt-warn">0</em></span>
+        <button class="bp-btn min" id="b-guide"><i data-lucide="compass"></i>Guidance</button>
         <button class="bp-btn min" data-view-btn="ops"><i data-lucide="map"></i>Map</button>
-        <button class="bp-btn min"><i data-lucide="network"></i>Board hierarchy <i data-lucide="chevron-down"></i></button>
-        <button class="bp-btn min"><i data-lucide="columns-3"></i>View</button>
       </div>
       <div class="board" id="board"></div>
     </section>
@@ -123,6 +118,8 @@
   <aside class="right" id="inspector"></aside>
 
   <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
+  <div class="dropdown" id="dd"></div>
+  <div class="guide" id="guide"></div>
   <div class="toasts" id="toasts"></div>
 </div>
 <script src="vendor/three.min.js"></script>

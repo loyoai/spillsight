@@ -30,6 +30,22 @@ Built solo for the **Meta Global AI Developer Hackathon** (Cerebral Valley, indi
 <tr><td><b>Board</b>: every detection, threatened site and assignment, from Detected to Verified</td><td><b>Resources</b>: inventory, add-asset form, 3D hardware model</td></tr>
 </table>
 
+### Guided walkthrough
+
+A guide in the bottom-left corner walks a first-time user through the real pipeline and highlights the next control to click. It advances on its own as each step completes:
+
+1. **Run SAM 3.1:** a live segmentation call ($0.0025), or *Cached result* to replay a saved real response.
+2. **Forecast drift:** 300 particles over 72 h; switch between *Live · Open-Meteo* and the labelled *Shamal scenario*.
+3. **Task assets → Optimize Recommender:** a live Muse Spark 1.3 plan, weighted by the six gauges.
+4. **Approve:** read each *Why*, then approve, reject or reassign.
+5. **Board:** watch the cards move as assets arrive.
+6. **Your own data:** add assets, upload images, measure or nominate a sighting from the right-click menu, or export the incident report.
+
+Every control does something real: the File, Tools and Help menus, Export (incident report as JSON), map right-click (copy coordinates, measure distance and bearing, nominate to board, place the image footprint, live met-ocean at a point, basemap), Search nearby, board search, filter, sort and *Add sighting*, clickable map markers, and the asset inspector. `tools/clicktest.mjs` presses all of them and runs the pipeline once.
+
+<table><tr><td><img src="docs/img/10-metrics.png" alt="AI metrics"></td><td><img src="docs/img/11-hardware-models.png" alt="3D hardware"></td></tr>
+<tr><td><b>Recommender weights</b>: sent to Muse Spark 1.3 with the forecast and inventory</td><td><b>3D hardware models</b>: vessel, drone, skimmer, aircraft, storage barge, boom</td></tr></table>
+
 ---
 
 ## Architecture
