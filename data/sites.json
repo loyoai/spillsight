@@ -1,0 +1,246 @@
+[
+ {
+  "id": "bandar_abbas_port",
+  "name": "Bandar Abbas port",
+  "kind": "port",
+  "lonlat": [
+   56.21,
+   27.14
+  ],
+  "country": "Iran",
+  "note": "Major commercial port on the northern shore of the strait.",
+  "approx": true
+ },
+ {
+  "id": "bandar_abbas_desal",
+  "name": "Bandar Abbas desalination intake",
+  "kind": "intake",
+  "lonlat": [
+   56.35,
+   27.17
+  ],
+  "country": "Iran",
+  "note": "Seawater intake for municipal desalination; intakes are sensitive to floating oil.",
+  "approx": true
+ },
+ {
+  "id": "qeshm_desal",
+  "name": "Qeshm desalination intake",
+  "kind": "intake",
+  "lonlat": [
+   56.27,
+   26.95
+  ],
+  "country": "Iran",
+  "note": "Seawater intake on Qeshm Island.",
+  "approx": true
+ },
+ {
+  "id": "hara_mangrove",
+  "name": "Hara mangrove protected area",
+  "kind": "mangrove",
+  "lonlat": [
+   55.73,
+   26.85
+  ],
+  "country": "Iran",
+  "note": "Grey mangrove (Avicennia marina) forest between Qeshm and the mainland; protected area.",
+  "approx": true
+ },
+ {
+  "id": "hormuz_island",
+  "name": "Hormuz Island coast",
+  "kind": "coast",
+  "lonlat": [
+   56.46,
+   27.06
+  ],
+  "country": "Iran",
+  "note": "Island shoreline east of Bandar Abbas.",
+  "approx": true
+ },
+ {
+  "id": "larak_island",
+  "name": "Larak Island coast",
+  "kind": "coast",
+  "lonlat": [
+   56.36,
+   26.86
+  ],
+  "country": "Iran",
+  "note": "Island shoreline close to the shipping lanes.",
+  "approx": true
+ },
+ {
+  "id": "khasab_port",
+  "name": "Khasab port",
+  "kind": "port",
+  "lonlat": [
+   56.25,
+   26.2
+  ],
+  "country": "Oman",
+  "note": "Main port of the Musandam peninsula.",
+  "approx": true
+ },
+ {
+  "id": "khasab_desal",
+  "name": "Khasab desalination intake",
+  "kind": "intake",
+  "lonlat": [
+   56.24,
+   26.19
+  ],
+  "country": "Oman",
+  "note": "Seawater intake serving Khasab.",
+  "approx": true
+ },
+ {
+  "id": "khor_sham_coral",
+  "name": "Khor Sham coral reefs",
+  "kind": "coral",
+  "lonlat": [
+   56.33,
+   26.21
+  ],
+  "country": "Oman",
+  "note": "Fjord-like inlet with fringing coral communities.",
+  "approx": true
+ },
+ {
+  "id": "kumzar",
+  "name": "Kumzar village coast",
+  "kind": "town",
+  "lonlat": [
+   56.4,
+   26.33
+  ],
+  "country": "Oman",
+  "note": "Coastal village near the tip of the Musandam peninsula, reached by sea.",
+  "approx": true
+ },
+ {
+  "id": "rak_desal",
+  "name": "Ras Al Khaimah desalination intake",
+  "kind": "intake",
+  "lonlat": [
+   55.94,
+   25.79
+  ],
+  "country": "UAE",
+  "note": "Seawater intake on the Ras Al Khaimah coast.",
+  "approx": true
+ },
+ {
+  "id": "saqr_port",
+  "name": "Saqr port",
+  "kind": "port",
+  "lonlat": [
+   56.05,
+   25.98
+  ],
+  "country": "UAE",
+  "note": "Bulk and container port north of Ras Al Khaimah.",
+  "approx": true
+ },
+ {
+  "id": "ras_musandam",
+  "name": "Ras Musandam coast",
+  "kind": "coast",
+  "lonlat": [
+   56.49,
+   26.36
+  ],
+  "country": "Oman",
+  "note": "Northern tip of the Musandam peninsula; rocky coast and fishing grounds.",
+  "approx": true
+ },
+ {
+  "id": "musandam_reefs",
+  "name": "Northern Musandam reefs",
+  "kind": "coral",
+  "lonlat": [
+   56.45,
+   26.3
+  ],
+  "country": "Oman",
+  "note": "Fringing coral reefs used for diving and fishing.",
+  "approx": true
+ },
+ {
+  "id": "tss_inbound",
+  "name": "Traffic separation scheme, inbound lane",
+  "kind": "lane",
+  "path": [
+   [
+    56.9,
+    26.27
+   ],
+   [
+    56.72,
+    26.44
+   ],
+   [
+    56.55,
+    26.6
+   ],
+   [
+    56.38,
+    26.62
+   ],
+   [
+    56.2,
+    26.56
+   ],
+   [
+    56.05,
+    26.48
+   ],
+   [
+    55.9,
+    26.42
+   ]
+  ],
+  "country": null,
+  "note": "Approximate centreline of the westbound (inbound) lane; for orientation only.",
+  "approx": true
+ },
+ {
+  "id": "tss_outbound",
+  "name": "Traffic separation scheme, outbound lane",
+  "kind": "lane",
+  "path": [
+   [
+    55.9,
+    26.33
+   ],
+   [
+    56.05,
+    26.39
+   ],
+   [
+    56.2,
+    26.46
+   ],
+   [
+    56.36,
+    26.52
+   ],
+   [
+    56.5,
+    26.52
+   ],
+   [
+    56.66,
+    26.38
+   ],
+   [
+    56.9,
+    26.19
+   ]
+  ],
+  "country": null,
+  "note": "Approximate centreline of the eastbound (outbound) lane; for orientation only.",
+  "approx": true
+ }
+]

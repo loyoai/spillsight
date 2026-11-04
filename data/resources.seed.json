@@ -1,0 +1,223 @@
+[
+ {
+  "id": "rv-bnd-1",
+  "type": "vessel",
+  "name": "Bandar Abbas Response Vessel 1",
+  "base": "Bandar Abbas",
+  "lonlat": [
+   56.22,
+   27.12
+  ],
+  "speed_kn": 12,
+  "boom_m": 0,
+  "skimmer_m3h": 0,
+  "storage_m3": 40,
+  "crew": 8,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "rv-bnd-2",
+  "type": "vessel",
+  "name": "Bandar Abbas Response Vessel 2",
+  "base": "Bandar Abbas",
+  "lonlat": [
+   56.23,
+   27.12
+  ],
+  "speed_kn": 10,
+  "boom_m": 0,
+  "skimmer_m3h": 0,
+  "storage_m3": 30,
+  "crew": 6,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "rv-qsm-1",
+  "type": "vessel",
+  "name": "Qeshm Response Vessel 1",
+  "base": "Qeshm",
+  "lonlat": [
+   56.28,
+   26.93
+  ],
+  "speed_kn": 14,
+  "boom_m": 0,
+  "skimmer_m3h": 0,
+  "storage_m3": 20,
+  "crew": 6,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "rv-ksb-1",
+  "type": "vessel",
+  "name": "Khasab Response Vessel 1",
+  "base": "Khasab",
+  "lonlat": [
+   56.26,
+   26.21
+  ],
+  "speed_kn": 13,
+  "boom_m": 0,
+  "skimmer_m3h": 0,
+  "storage_m3": 30,
+  "crew": 7,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "rv-sqr-1",
+  "type": "vessel",
+  "name": "Saqr Port Response Vessel 1",
+  "base": "Saqr port",
+  "lonlat": [
+   56.06,
+   25.99
+  ],
+  "speed_kn": 11,
+  "boom_m": 0,
+  "skimmer_m3h": 0,
+  "storage_m3": 50,
+  "crew": 8,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "bm-bnd-1",
+  "type": "boom",
+  "name": "Bandar Abbas Boom Unit 1",
+  "base": "Bandar Abbas",
+  "lonlat": [
+   56.21,
+   27.13
+  ],
+  "speed_kn": 8,
+  "boom_m": 800,
+  "skimmer_m3h": 0,
+  "storage_m3": 0,
+  "crew": 4,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "bm-ksb-1",
+  "type": "boom",
+  "name": "Khasab Boom Unit 1",
+  "base": "Khasab",
+  "lonlat": [
+   56.25,
+   26.21
+  ],
+  "speed_kn": 8,
+  "boom_m": 500,
+  "skimmer_m3h": 0,
+  "storage_m3": 0,
+  "crew": 4,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "bm-sqr-1",
+  "type": "boom",
+  "name": "Saqr Port Boom Unit 1",
+  "base": "Saqr port",
+  "lonlat": [
+   56.05,
+   25.99
+  ],
+  "speed_kn": 8,
+  "boom_m": 300,
+  "skimmer_m3h": 0,
+  "storage_m3": 0,
+  "crew": 3,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "sk-qsm-1",
+  "type": "skimmer",
+  "name": "Qeshm Skimmer Unit 1",
+  "base": "Qeshm",
+  "lonlat": [
+   56.28,
+   26.94
+  ],
+  "speed_kn": 8,
+  "boom_m": 0,
+  "skimmer_m3h": 50,
+  "storage_m3": 0,
+  "crew": 3,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "sk-ksb-1",
+  "type": "skimmer",
+  "name": "Khasab Skimmer Unit 1",
+  "base": "Khasab",
+  "lonlat": [
+   56.25,
+   26.2
+  ],
+  "speed_kn": 8,
+  "boom_m": 0,
+  "skimmer_m3h": 30,
+  "storage_m3": 0,
+  "crew": 3,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "st-bnd-1",
+  "type": "storage",
+  "name": "Bandar Abbas Storage Barge 1",
+  "base": "Bandar Abbas",
+  "lonlat": [
+   56.2,
+   27.13
+  ],
+  "speed_kn": 6,
+  "boom_m": 0,
+  "skimmer_m3h": 0,
+  "storage_m3": 1200,
+  "crew": 5,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "dr-ksb-1",
+  "type": "drone",
+  "name": "Khasab Survey Drone 1",
+  "base": "Khasab",
+  "lonlat": [
+   56.25,
+   26.2
+  ],
+  "speed_kn": 45,
+  "boom_m": 0,
+  "skimmer_m3h": 0,
+  "storage_m3": 0,
+  "crew": 2,
+  "status": "ready",
+  "sample": true
+ },
+ {
+  "id": "dr-qsm-1",
+  "type": "drone",
+  "name": "Qeshm Survey Drone 1",
+  "base": "Qeshm",
+  "lonlat": [
+   56.27,
+   26.95
+  ],
+  "speed_kn": 45,
+  "boom_m": 0,
+  "skimmer_m3h": 0,
+  "storage_m3": 0,
+  "crew": 2,
+  "status": "ready",
+  "sample": true
+ }
+]
