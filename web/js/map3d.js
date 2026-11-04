@@ -5,12 +5,12 @@ const Map3D = (() => {
   const smooth = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
   const lerp = (a, b, k) => a + (b - a) * k;
   const hash = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-  const OIL_Y = 0.06, FOG = new THREE.Color("#0b1016");
+  const OIL_Y = 0.06, FOG = new THREE.Color("#0c1012");
 
   let renderer, scene, camera, el, overlay, svg, raf;
   const cam = { tx: 0, tz: 0, dist: 160, az: -0.6, el: 0.95 }, fly = { on: false };
   const markers = [];
-  let water = null, slickMesh = null, slickLine = null, imgPlane = null;
+  let water = null, slickMesh = null, slickLine = null, imgPlane = null, farSea = null, tmat = null, texSat = null, texDark = null, basemap = "dark";
   const groups = {};
   let onPick = null, frameHooks = [];
 
@@ -25,8 +25,8 @@ const Map3D = (() => {
     camera = new THREE.PerspectiveCamera(38, 1, 0.05, 2000);
     scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 0.85));
     const sun = new THREE.DirectionalLight(0xfff1dd, 0.6); sun.position.set(-80, 120, -60); scene.add(sun);
-    const far = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x0c2433 }));
-    far.position.y = -0.08; scene.add(far);
+    const far = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x0d1417 }));
+    far.position.y = -0.08; scene.add(far); farSea = far;
     ["sites", "lanes", "risk", "oil", "tracks", "booms", "assets"].forEach((k) => { groups[k] = new THREE.Group(); scene.add(groups[k]); });
     controls(canvas);
     window.addEventListener("resize", resize); resize();
@@ -58,8 +58,13 @@ const Map3D = (() => {
       if (sea && val < 4) return -0.05;
       return val <= 0.5 ? 0.03 : ((val - 1) / 254) * hmax * ex + 0.03;
     };
-    const map = new THREE.Texture(sat); map.needsUpdate = true; map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    const tmat = new THREE.MeshBasicMaterial({ map, color: 0xd0d4d8 });
+    const aniso = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    texSat = new THREE.Texture(sat); texSat.needsUpdate = true; texSat.anisotropy = aniso;
+    // dark operations basemap: desaturated, dimmed copy of the satellite mosaic
+    const dc = document.createElement("canvas"); dc.width = sat.width; dc.height = sat.height;
+    const dctx = dc.getContext("2d"); dctx.filter = "grayscale(0.9) brightness(0.42) contrast(1.25)"; dctx.drawImage(sat, 0, 0);
+    texDark = new THREE.CanvasTexture(dc); texDark.anisotropy = aniso;
+    tmat = new THREE.MeshBasicMaterial({ map: texDark, color: 0xffffff });
     const TX = 4, TZ = 2, SX = 150, SZ = 120;
     for (let iz = 0; iz < TZ; iz++) for (let ix = 0; ix < TX; ix++) {
       const geo = new THREE.PlaneGeometry(R.W / TX, R.H / TZ, SX, SZ); geo.rotateX(-Math.PI / 2);
@@ -76,7 +81,7 @@ const Map3D = (() => {
     const mask = new THREE.Texture(sm); mask.needsUpdate = true;
     water = new THREE.Mesh(new THREE.PlaneGeometry(R.W, R.H).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({
       transparent: true, depthWrite: false,
-      uniforms: { uMask: { value: mask }, uTime: { value: 0 }, uDeep: { value: new THREE.Color("#0d3247") }, uShallow: { value: new THREE.Color("#17506a") }, uFog: { value: FOG }, uNear: { value: 260 }, uFar: { value: 620 } },
+      uniforms: { uMask: { value: mask }, uTime: { value: 0 }, uDeep: { value: new THREE.Color("#0b1519") }, uShallow: { value: new THREE.Color("#122228") }, uFog: { value: FOG }, uNear: { value: 260 }, uFar: { value: 620 } },
       vertexShader: "varying vec2 vUv; varying vec3 vW; varying float vD; void main(){ vUv=uv; vec4 wp=modelMatrix*vec4(position,1.0); vW=wp.xyz; vec4 mv=viewMatrix*wp; vD=-mv.z; gl_Position=projectionMatrix*mv; }",
       fragmentShader: "uniform sampler2D uMask; uniform float uTime; uniform vec3 uDeep; uniform vec3 uShallow; uniform vec3 uFog; uniform float uNear; uniform float uFar; varying vec2 vUv; varying vec3 vW; varying float vD;" +
         "float wv(vec2 p){ return (sin(dot(p,vec2(0.8,0.6))*1.6+uTime*0.7)+sin(dot(p,vec2(-0.5,0.85))*2.3-uTime*0.5)+0.6*sin(dot(p,vec2(0.95,-0.3))*3.7+uTime*0.9))/2.6; }" +
@@ -84,9 +89,16 @@ const Map3D = (() => {
         " vec3 c=mix(uDeep,uShallow,0.5+0.12*w); c+=pow(max(0.0,w*0.55),8.0)*0.1; c=mix(c,uFog,smoothstep(uNear,uFar,vD)); gl_FragColor=vec4(c,0.88*m); }",
     }));
     water.renderOrder = 1; scene.add(water);
+    setBasemap(basemap);
     return true;
   }
 
+  function setBasemap(b) {
+    basemap = b; if (!tmat) return;
+    tmat.map = b === "dark" ? texDark : texSat; tmat.color.set(b === "dark" ? 0xffffff : 0xd0d4d8); tmat.needsUpdate = true;
+    water.material.uniforms.uDeep.value.set(b === "dark" ? "#0b1519" : "#0d3247"); water.material.uniforms.uShallow.value.set(b === "dark" ? "#122228" : "#17506a");
+    farSea.material.color.set(b === "dark" ? 0x0d1417 : 0x0c2433);
+  }
   // ------------------------------------------------------------------ controls + camera
   function controls(canvas) {
     let drag = null;
@@ -99,7 +111,7 @@ const Map3D = (() => {
       else { const k = cam.dist * 0.0016, ca = Math.cos(cam.az), sa = Math.sin(cam.az); cam.tx += (-dx * ca - dy * sa) * k; cam.tz += (dx * sa - dy * ca) * k; }
     });
     canvas.addEventListener("pointerup", (e) => {
-      if (drag && drag.moved < 4 && onPick) { const ll = pick(e); if (ll) onPick(ll, e); }
+      if (drag && drag.moved < 4 && onPick) { const ll = pick(e); if (ll) onPick(ll, e, drag.b === "pan"); }
       drag = null;
     });
     canvas.addEventListener("wheel", (e) => { e.preventDefault(); fly.on = false; cam.dist = clamp(cam.dist * Math.exp(e.deltaY * 0.0012), 3, 420); }, { passive: false });
@@ -163,7 +175,7 @@ const Map3D = (() => {
       if (s.kind === "lane") {
         const pts = s.path.map((ll) => { const [x, z] = Geo.toWorld(ll[0], ll[1]); return new THREE.Vector3(x, 0.05, z); });
         const g = new THREE.BufferGeometry().setFromPoints(pts);
-        const line = new THREE.Line(g, new THREE.LineDashedMaterial({ color: 0x38bdf8, dashSize: 1.6, gapSize: 1.0, transparent: true, opacity: 0.75 }));
+        const line = new THREE.Line(g, new THREE.LineDashedMaterial({ color: 0x8abbff, dashSize: 1.6, gapSize: 1.0, transparent: true, opacity: 0.55 }));
         line.computeLineDistances(); groups.lanes.add(line);
         continue;
       }
@@ -207,7 +219,7 @@ const Map3D = (() => {
     slickMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x0a0806, transparent: true, opacity: 0.82, depthWrite: false, side: THREE.DoubleSide }));
     slickMesh.position.y = OIL_Y + 0.004; slickMesh.renderOrder = 4; scene.add(slickMesh);
     const lg = new THREE.BufferGeometry().setFromPoints(w.concat([w[0]]).map((p) => new THREE.Vector3(p[0], OIL_Y + 0.01, p[1])));
-    slickLine = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xf97316 })); slickLine.renderOrder = 6; scene.add(slickLine);
+    slickLine = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xe5484d })); slickLine.renderOrder = 6; scene.add(slickLine);
   }
   function slickOpacity(k) { if (slickMesh) { slickMesh.material.opacity = 0.82 * k; slickLine.material.opacity = k; slickLine.material.transparent = true; } }
 
@@ -240,7 +252,7 @@ const Map3D = (() => {
     for (let k = 0; k < N; k += 6) {
       const tr = W[k], end = f.beach_h[k] == null ? tr.length - 1 : Math.min(tr.length - 1, f.beach_h[k]);
       const lg = new THREE.BufferGeometry().setFromPoints(tr.slice(0, end + 1).map((p) => new THREE.Vector3(p[0], OIL_Y + 0.02, p[1])));
-      const line = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.35 }));
+      const line = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xe8e8e8, transparent: true, opacity: 0.22 }));
       line.userData.end = end; groups.tracks.add(line);
     }
   }
@@ -302,7 +314,7 @@ const Map3D = (() => {
     const mx = (x0 + x1) / 2 + (z1 - z0) * 0.12, mz = (z0 + z1) / 2 - (x1 - x0) * 0.12;
     a.path = [[x0, z0], [mx, mz], [x1, z1]]; a.t0 = t0; a.dur = dur;
     if (!a.line) {
-      a.line = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x60a5fa, dashSize: 0.8, gapSize: 0.5, transparent: true, opacity: 0.9 }));
+      a.line = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.8, gapSize: 0.5, transparent: true, opacity: 0.75 }));
       groups.assets.add(a.line);
     }
     const pts = []; for (let i = 0; i <= 40; i++) { const k = i / 40, u = 1 - k; pts.push(new THREE.Vector3(u * u * x0 + 2 * u * k * mx + k * k * x1, OIL_Y + 0.02, u * u * z0 + 2 * u * k * mz + k * k * z1)); }
@@ -342,7 +354,7 @@ const Map3D = (() => {
     updateMarkers();
   }
   return {
-    init, loadTerrain, flyTo, setSites, setRisk, setImageOverlay, fadeImage, setSlick, slickOpacity, setForecast, setHour, centroidAt,
+    init, loadTerrain, setBasemap, getBasemap: () => basemap, flyTo, setSites, setRisk, setImageOverlay, fadeImage, setSlick, slickOpacity, setForecast, setHour, centroidAt,
     setBooms, boomProgress, setAssets, mission, assetPos, marker, clearMarkers, setGroupVisible,
     onPick: (f) => (onPick = f), onFrame: (f) => frameHooks.push(f), setClock: (c) => (simClock = c), cam, canvas: () => renderer.domElement,
   };

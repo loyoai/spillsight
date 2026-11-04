@@ -3,98 +3,114 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SpillSight · Strait of Hormuz</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23f97316%27/%3E%3Cpath d=%27M16 7c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z%27 fill=%27white%27/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>SpillSight · HZ-01 Strait of Hormuz</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%275%27 fill=%27%23252a31%27/%3E%3Cpath d=%27M16 6c4.5 5.5 7 9 7 12a7 7 0 0 1-14 0c0-3 2.5-6.5 7-12z%27 fill=%27%23b6c94a%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <div id="app">
-  <header class="top">
-    <div class="brand"><span class="logo"><i data-lucide="droplets"></i></span>SpillSight</div>
-    <nav class="tabs" id="tabs">
-      <button data-view="ops" class="on"><i data-lucide="map"></i>Operations</button>
-      <button data-view="board"><i data-lucide="kanban"></i>Board<em id="board-count">0</em></button>
-      <button data-view="res"><i data-lucide="boxes"></i>Resources</button>
-      <button data-view="data"><i data-lucide="database"></i>Data &amp; models</button>
+  <!-- application bar -->
+  <header class="appbar">
+    <button class="ab-ico" title="Workspaces"><i data-lucide="grid-3x3"></i></button>
+    <span class="ab-glyph"><i data-lucide="droplet"></i></span>
+    <span class="ab-doc">HZ-01 Strait of Hormuz <i data-lucide="star"></i></span>
+    <span class="ab-sim">SIMULATED</span>
+    <nav class="menu" id="menu">
+      <button>File</button><button>Edit</button><button data-view="ops" class="on">Map</button><button data-view="board">Board</button><button data-view="res">Assets</button><button data-view="data">Data</button><button>Tools</button><button>Help</button>
     </nav>
-    <div class="incident"><span class="dot"></span>HZ-01 · Strait of Hormuz <span class="sim">SIMULATED INCIDENT</span></div>
-    <div class="pipe" id="pipe">
-      <span data-k="detect"><i data-lucide="scan-search"></i>Detect</span><b></b>
-      <span data-k="forecast"><i data-lucide="wind"></i>Forecast</span><b></b>
-      <span data-k="plan"><i data-lucide="git-branch"></i>Plan</span><b></b>
-      <span data-k="approve"><i data-lucide="circle-check"></i>Approve</span><b></b>
-      <span data-k="execute"><i data-lucide="navigation"></i>Execute</span>
-    </div>
-    <div class="topr">
-      <span class="chip mono" id="utc">--:--:-- UTC</span>
-      <span class="chip" id="budget" title="Meta API spend against the $2 cap"><i data-lucide="gauge"></i><span>$0.00 / $2</span></span>
-      <span class="chip" id="srv"><i data-lucide="activity"></i><span>server</span></span>
-      <span class="av">RM</span>
+    <div class="ab-r">
+      <span class="ab-stat" id="srv" title="Server"><i data-lucide="activity"></i></span>
+      <span class="ab-stat" id="budget" title="Meta API spend against the $2 cap"><i data-lucide="gauge"></i><span>$0.00</span></span>
+      <span class="ab-stat"><i data-lucide="bell"></i><em id="board-count">0</em></span>
+      <button class="ab-share"><i data-lucide="share-2"></i>Share <b>3</b></button>
+      <label class="ab-search"><i data-lucide="search"></i><input placeholder="Search" id="obj-search"></label>
     </div>
   </header>
 
+  <!-- icon rail -->
   <nav class="rail" id="rail">
-    <button data-stage="detect" class="on" title="Detect"><i data-lucide="scan-search"></i></button>
-    <button data-stage="forecast" title="Forecast"><i data-lucide="wind"></i></button>
-    <button data-stage="plan" title="Plan &amp; pair assets"><i data-lucide="git-branch"></i></button>
-    <button data-stage="execute" title="Execute"><i data-lucide="navigation"></i></button>
-    <span class="sep"></span>
-    <button data-view-btn="res" title="Resources"><i data-lucide="boxes"></i></button>
+    <button data-tab="targets" class="on" title="Incident board"><i data-lucide="crosshair"></i></button>
+    <button data-tab="layers" title="Map layers"><i data-lucide="layers"></i></button>
+    <button data-tab="assets" title="Asset tasking"><i data-lucide="ship"></i></button>
+    <button data-tab="alerts" title="Alerts"><i data-lucide="triangle-alert"></i></button>
+    <span class="grow"></span>
     <button data-view-btn="board" title="Board"><i data-lucide="kanban"></i></button>
-    <button data-view-btn="data" title="Data &amp; models"><i data-lucide="database"></i></button>
+    <button data-view-btn="res" title="Assets"><i data-lucide="boxes"></i></button>
+    <button data-view-btn="data" title="Data"><i data-lucide="database"></i></button>
+    <button title="Settings"><i data-lucide="settings"></i></button>
   </nav>
 
-  <aside class="left">
-    <div class="ph"><span>Objects</span><i data-lucide="layers"></i></div>
-    <div class="search"><i data-lucide="search"></i><input placeholder="Search sites, assets, detections…" id="obj-search"></div>
-    <div id="tree"></div>
-  </aside>
+  <!-- left panel -->
+  <aside class="left" id="left"></aside>
 
+  <!-- stage -->
   <main class="stage">
     <section id="view-ops" class="view on">
       <div id="map"></div>
-      <div class="hud hud-tl"><div class="crumb"><i data-lucide="map"></i>Gulf &amp; Gulf of Oman <i data-lucide="chevron-right"></i> <b>Strait of Hormuz</b></div><div class="mono small" id="cursor-ll">—</div></div>
-      <div class="hud hud-met" id="met"></div>
-      <div class="hud hud-tools">
-        <button id="t-home" title="Reset view"><i data-lucide="crosshair"></i></button>
-        <button id="t-slick" title="Go to slick"><i data-lucide="target"></i></button>
-        <button id="t-tracks" title="Trajectories" class="on"><i data-lucide="route"></i></button>
-        <button id="t-lanes" title="Shipping lanes" class="on"><i data-lucide="waypoints"></i></button>
+      <div class="objchip" id="objchip"></div>
+      <div class="cvd" id="cvd"></div>
+      <div class="vtools vtools-l">
+        <button id="t-home" title="Reset view"><i data-lucide="maximize"></i></button>
+        <button id="t-slick" title="Zoom to slick"><i data-lucide="locate-fixed"></i></button>
+        <button id="t-tracks" class="on" title="Trajectories"><i data-lucide="route"></i></button>
+        <button id="t-lanes" class="on" title="Traffic lanes"><i data-lucide="waypoints"></i></button>
+        <button id="t-base" title="Basemap: dark / satellite"><i data-lucide="map"></i></button>
       </div>
-      <div class="hud hud-legend"><span><i class="sw oil"></i>Oil</span><span><i class="sw risk"></i>Risk zone</span><span><i class="sw lane"></i>Traffic lanes</span><span><i class="sw asset"></i>Assets</span><span><i class="sw boom"></i>Boom</span></div>
+      <div class="vtools vtools-r">
+        <button title="Layers"><i data-lucide="panels-top-left"></i></button>
+        <button title="Lock"><i data-lucide="lock"></i></button>
+        <div class="compass" id="compass"><i data-lucide="navigation-2"></i></div>
+        <div class="tilt"><span id="tilt-v">25°</span><div class="tilt-bar"><i id="tilt-i"></i></div></div>
+      </div>
+      <div class="coordw" id="coordw"><span><i data-lucide="locate"></i><b id="cursor-ll">26.470°N 56.520°E</b></span><span><i data-lucide="mountain"></i><b id="cursor-el">−0.0 m</b></span><span class="sn"><i data-lucide="search"></i>Search nearby</span></div>
+      <div class="met" id="met"></div>
       <div class="timeline" id="timeline">
-        <button id="tl-play"><i data-lucide="play"></i></button>
-        <div class="tl-time mono" id="tl-time">T+00:00</div>
-        <div class="tl-mode" id="tl-mode">No forecast yet</div>
+        <button id="tl-play" title="Play"><i data-lucide="play"></i></button>
+        <span class="tl-time" id="tl-time">T+00:00</span>
+        <span class="tl-mode" id="tl-mode">NO FORECAST</span>
         <div class="tl-track" id="tl-track"><div class="tl-fill" id="tl-fill"></div><div class="tl-knob" id="tl-knob"></div><div class="tl-marks" id="tl-marks"></div></div>
       </div>
-      <div class="cvd" id="cvd"></div>
+      <div class="statusbar"><span id="sb-n">N/A</span><span><i data-lucide="sliders-vertical"></i></span><span id="sb-scale">5 km</span><span class="dt" id="utc">— Z</span></div>
+      <div class="ctxmenu" id="ctx"></div>
     </section>
 
-    <section id="view-board" class="view"><div class="board" id="board"></div></section>
+    <section id="view-board" class="view">
+      <div class="btoolbar">
+        <button class="bp-btn green"><i data-lucide="plus"></i>Add <i data-lucide="chevron-down"></i></button>
+        <label class="bp-input"><i data-lucide="search"></i><input placeholder="Search…"></label>
+        <button class="bp-btn min"><i data-lucide="filter"></i>Filter</button>
+        <button class="bp-btn min"><i data-lucide="arrow-down-wide-narrow"></i>Sort by</button>
+        <button class="bp-btn min"><i data-lucide="layout-grid"></i>Group by <i data-lucide="chevron-down"></i></button>
+        <span class="grow"></span>
+        <span class="bt-tags"><i data-lucide="triangle-alert"></i><em id="bt-warn">0</em></span>
+        <button class="bp-btn min"><i data-lucide="compass"></i>Guidance <i data-lucide="chevron-down"></i></button>
+        <button class="bp-btn min" data-view-btn="ops"><i data-lucide="map"></i>Map</button>
+        <button class="bp-btn min"><i data-lucide="network"></i>Board hierarchy <i data-lucide="chevron-down"></i></button>
+        <button class="bp-btn min"><i data-lucide="columns-3"></i>View</button>
+      </div>
+      <div class="board" id="board"></div>
+    </section>
 
     <section id="view-res" class="view">
       <div class="res-wrap">
         <div class="res-main">
-          <div class="vh"><div><h2>Resources</h2><p>Response assets available to the planner. Sample entries are marked.</p></div><div class="filters" id="res-filters"></div></div>
-          <table class="tbl" id="res-table"></table>
+          <div class="vh"><div><h2>Asset inventory</h2><p>Response assets available to the recommender. Entries marked <span class="bp-tag">SAMPLE</span> are demo data.</p></div><div class="filters" id="res-filters"></div></div>
+          <table class="bp-table" id="res-table"></table>
         </div>
         <div class="res-side">
-          <div class="card hw">
-            <div class="hw-head"><span id="hw-title">Response vessel</span><span class="chip ghost" id="hw-tag">3D model</span></div>
+          <div class="panelbox hw">
+            <div class="pb-h"><i data-lucide="box"></i><span id="hw-title">Response vessel</span><span class="bp-tag">3D MODEL</span></div>
             <canvas id="hw-canvas"></canvas>
             <img id="hw-img" alt="">
-            <div class="hw-cred" id="hw-cred">AI-generated (Muse Image 1.0)</div>
+            <div class="hw-cred">AI-generated (Muse Image 1.0)</div>
           </div>
-          <form class="card form" id="res-form">
-            <div class="ph"><span>Add resource</span><i data-lucide="plus"></i></div>
+          <form class="panelbox form" id="res-form">
+            <div class="pb-h"><i data-lucide="plus"></i><span>Add asset</span></div>
             <div class="seg" id="res-type"></div>
             <label>Name<input name="name" required placeholder="e.g. Khasab Response Vessel 3"></label>
             <div class="row2"><label>Base<select name="base" id="res-base"></select></label><label>Status<select name="status"><option>ready</option><option>busy</option><option>maintenance</option></select></label></div>
             <div class="row3" id="res-specs"></div>
-            <button class="btn pr" type="submit"><i data-lucide="plus"></i>Add to inventory</button>
+            <button class="bp-btn green w" type="submit"><i data-lucide="plus"></i>Add to inventory</button>
           </form>
         </div>
       </div>
@@ -103,6 +119,7 @@
     <section id="view-data" class="view"><div class="data-wrap" id="data-wrap"></div></section>
   </main>
 
+  <!-- inspector -->
   <aside class="right" id="inspector"></aside>
 
   <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
