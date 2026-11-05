@@ -30,7 +30,7 @@ Serves `web/` statically and these JSON endpoints. All coordinates are `[lon, la
 - `POST /api/forecast` body `{slick: [[lon,lat],...] polygon, hours: 72, n: 300, metocean: {...}}`
   → `{hours, particles: N, tracks: [[[lon,lat] per hour] per particle] (rounded 4 dp), beach_h: [h|null], stats: {first_landfall_h, ashore_pct: {6,12,24,48,72}, drift_kn, drift_to_deg, area_km2}, impacts: [{site_id, eta_h, n}] sorted by eta}`
 - `POST /api/plan` body `{forecast_summary, impacts, resources, metocean, weights: {time, capacity, distance}}`
-  → `{ok, source: "muse-spark-1.3"|"rules", cost_usd, plan: {summary, assignments: [{resource_id, task, target_lonlat, eta_h, score, reason}], booms: [{site_id|null, kind: containment|deflection|exclusion, angle_deg, length_m, reason}], closures: [{site_id, from_h, action, reason}], advisories: [{kind, radius_km, reason}], risks: [str]}}`
+  → `{ok, source: "muse-wonder-1.0"|"rules", cost_usd, plan: {summary, assignments: [{resource_id, task, target_lonlat, eta_h, score, reason}], booms: [{site_id|null, kind: containment|deflection|exclusion, angle_deg, length_m, reason}], closures: [{site_id, from_h, action, reason}], advisories: [{kind, radius_km, reason}], risks: [str]}}`
 - `GET  /api/ledger` → `{total_usd, cap_usd, entries:[...]}`. Hard cap: refuse paid calls if total would exceed **$2.00** (shared with `../video/assets/api_cost_ledger.json`).
 - Key: read `META_API_KEY` from `../.env` (or env). Never log/print/commit it.
 

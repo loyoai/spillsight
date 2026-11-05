@@ -2,9 +2,8 @@
 
 SpillSight is an operations console that takes a responder from **"there is oil in this image"** to **"these boats, booms and closures, approved"** in a few minutes. It runs on a live 3D map of the Strait of Hormuz and uses Meta's models at the two points where people lose the most time: reading the imagery and writing the plan.
 
-Built solo for the **Meta Global AI Developer Hackathon** (Cerebral Valley, indie track).
+Built for the **Meta Global AI Developer Hackathon** (Cerebral Valley, indie track).
 
-![Operations console: forecast with risk zones](docs/img/03-forecast.png)
 
 > **Scenario note:** the incident (HZ-01) is **simulated**. The sample radar image is AI-generated, all resources are sample data, and site coordinates are approximate. The pipeline itself runs for real: SAM 3.1 segmentation, live Open-Meteo wind and currents, the particle drift model and the Muse Wonder plan.
 

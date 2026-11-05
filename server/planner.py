@@ -1,4 +1,4 @@
-"""Response planner: Muse Spark 1.3 (JSON schema) with a deterministic rules fallback."""
+"""Response planner: Meta Muse Wonder (JSON schema) with a deterministic rules fallback."""
 import hashlib
 import json
 import os
@@ -225,7 +225,7 @@ def rules_plan(body, resources, sites_by_id):
             "advisories": advisories, "risks": risks}
 
 
-# ------------------------------------------------------------------ Muse Spark
+# ------------------------------------------------------------------ Muse Wonder
 def _schema():
     s, n = {"type": "string"}, {"type": "number"}
 
