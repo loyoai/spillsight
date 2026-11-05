@@ -9,7 +9,8 @@ const require = createRequire(import.meta.url);
 const puppeteer = require(process.env.PUPPETEER_CORE || "puppeteer-core");
 const OUT = process.argv[2] || "/tmp/spillsight-rec", DRY = process.env.DRY === "1";
 const BASE = process.env.BASE || "http://127.0.0.1:8787/";
-const T0 = 66.6, T1 = 178.8, FPS = 30;           // voiceover times covered by the screen recording
+const T0 = 66.6, T1 = +(process.env.T1 || 178.8), FPS = 30;
+const CAP = process.env.CAP ? process.env.CAP.split(",").map(Number) : null;   // only save frames in [a, b]           // voiceover times covered by the screen recording
 fs.mkdirSync(OUT, { recursive: true });
 
 const SHIM = `(() => {
@@ -80,25 +81,35 @@ clickTrack(118.4, 10.5);
 move(121.8, ".sec .rowl", 0.8);
 clickTrack(124.8, 5);
 move(125.6, ".sec .rowl .bp-tag", 0.6);
-move(127.9, "#f-next", 0.7); click(128.7, "#f-next");
-move(130.2, ".gauge:nth-child(1)", 1.0); move(131.8, ".gauge:nth-child(2)", 0.8); move(133.2, ".gauge:nth-child(4)", 0.9);
-move(135.6, "#mm-go", 0.8); click(136.6, "#mm-go");
+// equipment check: the inventory in blueprint view
+move(127.9, '#menu [data-view="res"]', 0.6); click(128.6, '#menu [data-view="res"]');
+move(129.7, '#res-type [data-t="boom"]', 0.45); click(130.2, '#res-type [data-t="boom"]');
+move(131.2, '#res-type [data-t="skimmer"]', 0.4); click(131.6, '#res-type [data-t="skimmer"]');
+move(132.6, '#res-type [data-t="drone"]', 0.4); click(133.0, '#res-type [data-t="drone"]');
+move(134.4, '#menu [data-view="ops"]', 0.6); click(135.0, '#menu [data-view="ops"]');
+move(135.2, "#rec-row", 0.35); click(135.6, "#rec-row");
+move(135.9, "#mm-go", 0.5); click(136.6, "#mm-go");
 move(139.0, ".mcard", 0.8);
 move(141.2, "[data-rsel]", 0.9);
 clickTrack(143.4, 2);
-flyC(144.0, 2, 8.5, { el: 0.92, az: -0.3, dur: 2.4 });
-flyC(148.2, 2, 7.5, { el: 0.85, az: 0.45, dur: 5.5 });
+flyC(144.0, 2, 8.0, { el: 0.92, az: -0.3, dur: 2.4 });
+flyC(148.2, 2, 6.5, { el: 0.85, az: 0.45, dur: 5.5 });
 fly(154.5, [56.45, 26.30], 24, { el: 0.85, az: -0.1, dur: 2.6 });
 js(154.6, () => { const h = [...document.querySelectorAll("#inspector .sec-h")].find((e) => /Closures/.test(e.textContent)); if (h) document.querySelector("#inspector").scrollTop = h.offsetTop - 120; });
 move(156.4, "#inspector .sec:nth-last-of-type(2) .rowl", 0.8);
-flyC(159.9, 2, 20, { el: 0.85, az: -0.3, dur: 2.2 });
 move(161.4, "#p-ok", 0.8); click(162.7, "#p-ok");
-move(165.0, "#map", 1.0);
-move(168.6, '#menu [data-view="board"]', 0.6); click(169.3, '#menu [data-view="board"]');
-move(170.5, ".col:nth-child(6) .col-h", 0.8);
-move(172.3, '#menu [data-view="ops"]', 0.6); click(173.0, '#menu [data-view="ops"]');
-flyC(173.3, 2, 14, { el: 0.8, az: 0.6, dur: 5.5 });
-move(174.5, "#t-slick", 1.4);
+move(164.6, "#map", 1.0);
+move(166.9, '#menu [data-view="board"]', 0.5); click(167.5, '#menu [data-view="board"]');
+// drag two shoreline cards across the board, the way an operator would
+const drag = (t, title, col) => {
+  move(t, `.bc.k-site[data-title="${title}"]`, 0.6);
+  move(t + 0.8, `.col[data-col="${col}"] .col-b`, 0.9);
+  js(t + 1.75, ([title, col]) => { const c = [...document.querySelectorAll(".bc.k-site")].find((e) => e.textContent.includes(title)); const dst = document.querySelector(`.col[data-col="${col}"]`); if (!c || !dst) return;
+    const dt = new DataTransfer(); c.dispatchEvent(new DragEvent("dragstart", { dataTransfer: dt, bubbles: true })); dst.dispatchEvent(new DragEvent("dragover", { dataTransfer: dt, bubbles: true, cancelable: true })); dst.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true })); }, [title, col]);
+};
+drag(169.4, "Kumzar village coast", "exec");
+drag(172.6, "Ras Musandam coast", "exec");
+move(175.6, ".col:nth-child(6) .col-h", 0.9);
 A.sort((a, b) => a.t - b.t);
 
 // ---------------------------------------------------------------- capture loop
@@ -111,13 +122,13 @@ for (frame = 0; frame < N; frame++) {
   while (ai < A.length && A[ai].t <= t) {
     const a = A[ai++];
     if (a.kind === "move") { const p = await center(a.sel); if (p) mv = { from: cur.slice(), to: p, t0: t, dur: a.dur }; }
-    else if (a.kind === "click") { const p = await center(a.sel); if (p) { cur = p; await setCursor(...p); await page.mouse.click(p[0], p[1]); await ring(...p); } else console.log("missing", a.sel, t.toFixed(1)); if (DRY && a.sel === "#mm-go") await page.waitForSelector("#p-ok", { timeout: 120000 }); if (DRY && a.sel === "#d-run") await page.waitForSelector("#d-next", { timeout: 60000 }); }
+    else if (a.kind === "click") { const p = await center(a.sel); if (p) { cur = p; await setCursor(...p); await page.mouse.click(p[0], p[1]); await ring(...p); } else console.log("missing", a.sel, t.toFixed(1)); const W = DRY || (CAP && t < CAP[0]); if (W && a.sel === "#mm-go") await page.waitForSelector("#p-ok", { timeout: 120000 }); if (W && a.sel === "#d-run") await page.waitForSelector("#d-next", { timeout: 60000 }); if (W && a.sel === "#d-next") await page.waitForSelector("#f-next", { timeout: 60000 }); }
     else if (a.kind === "track") { const p = await trackAt(a.h); mv = null; cur = p; await setCursor(...p); await page.mouse.click(p[0], p[1]); await ring(...p); }
     else if (a.kind === "js") await page.evaluate(a.fn, a.arg);
   }
   if (mv) { const k = Math.min(1, (t - mv.t0) / mv.dur), e = ease(k); cur = [mv.from[0] + (mv.to[0] - mv.from[0]) * e, mv.from[1] + (mv.to[1] - mv.from[1]) * e]; await setCursor(...cur); if (k >= 1) mv = null; }
   await adv(1000 / FPS);
-  if (!DRY) await page.screenshot({ path: `${OUT}/f${String(frame).padStart(5, "0")}.jpg`, type: "jpeg", quality: 90 });
+  if (!DRY && (!CAP || (t >= CAP[0] && t <= CAP[1]))) await page.screenshot({ path: `${OUT}/f${String(frame).padStart(5, "0")}.jpg`, type: "jpeg", quality: 90 });
   if (frame % 300 === 0) console.log("frame", frame, "/", N, "t", t.toFixed(1));
 }
 console.log("done", N, "frames");

@@ -40,7 +40,7 @@
     const etaOf = (c) => parseFloat(String(c.tot || "").split("+")[1]) || 999;
     B.innerHTML = COLS.map(([k, n]) => { let cs = S.board.filter((c) => c.col === k && (!S.bWarn || c.warn) && (!bq || (c.title + " " + c.sub + " " + c.id).toLowerCase().includes(bq)));
       cs = S.bSort === "eta" ? cs.slice().sort((a, b) => etaOf(a) - etaOf(b)) : cs.slice().sort((a, b) => b.t - a.t); return `<div class="col ${k === "triage" ? "hl" : ""}" data-col="${k}"><div class="col-h"><span class="dot" style="background:${k === "complete" ? "#32a467" : k === "exec" ? "#4c90f0" : "#ec9a3c"}"></span>${n}<span class="n">${cs.length}</span></div><div class="col-b">` +
-      cs.map((c) => `<div class="bc k-${c.kind}" draggable="true" data-id="${c.id}">${c.tot ? `<div class="tot">${esc(c.tot.split(":")[0])}: <b>${esc(c.tot.split(":").slice(1).join(":"))}</b></div>` : ""}<div class="row"><span class="ic"><i data-lucide="${c.kind === "asg" ? "ship" : "crosshair"}"></i></span><div><span class="id">${c.id}</span> <b>${esc(c.title)}</b><small>${esc(c.sub)}</small></div></div><div class="ft"><span>Last edited ${ago(c.t)}</span>${c.warn ? '<span class="w"><i data-lucide="triangle-alert"></i></span>' : ""}</div></div>`).join("") + "</div></div>"; }).join("");
+      cs.map((c) => `<div class="bc k-${c.kind}${Date.now() - c.t < 450 ? " fresh" : ""}" draggable="true" data-id="${c.id}" data-title="${esc(c.title)}">${c.tot ? `<div class="tot">${esc(c.tot.split(":")[0])}: <b>${esc(c.tot.split(":").slice(1).join(":"))}</b></div>` : ""}<div class="row"><span class="ic"><i data-lucide="${c.kind === "asg" ? "ship" : "crosshair"}"></i></span><div><span class="id">${c.id}</span> <b>${esc(c.title)}</b><small>${esc(c.sub)}</small></div></div><div class="ft"><span>Last edited ${ago(c.t)}</span>${c.warn ? '<span class="w"><i data-lucide="triangle-alert"></i></span>' : ""}</div></div>`).join("") + "</div></div>"; }).join("");
     icons(B);
     $$(".bc", B).forEach((e) => e.addEventListener("dragstart", (ev) => ev.dataTransfer.setData("text", e.dataset.id)));
     $$(".col", B).forEach((col) => {
@@ -278,7 +278,10 @@
       const f = await API.forecast({ slick: S.slick, hours: 72, n: 300, metocean: activeMet() });
       S.fc = f; Map3D.setForecast(f); Map3D.setHour(0, 0); Map3D.fadeImage(0); Map3D.slickOpacity(0);
       const real = f.impacts.filter((im) => { const s = siteById(im.site_id); return s && s.kind !== "lane"; });
-      Map3D.setRisk(real.map((im) => ({ lonlat: siteById(im.site_id).lonlat, radius: 4, eta_h: im.eta_h })));
+      Map3D.setRisk([]);
+      const land = f.tracks.map((tr, i) => (f.beach_h[i] != null ? tr[Math.min(f.beach_h[i], tr.length - 1)] : null)).filter(Boolean);
+      Map3D.setLanding(land); Map3D.clearMarkers("land");
+      if (land.length) Map3D.marker({ kind: "det", icon: "triangle-alert", label: `Landfall +${f.stats.first_landfall_h} h`, sub: `${land.length} of ${f.particles} particles ashore`, lonlat: centroid(land), group: "land", y: 0.3 });
       Object.entries(S.siteMk).forEach(([id, m]) => m.el.classList.toggle("atrisk", real.some((i) => i.site_id === id)));
       S.board = S.board.filter((c) => c.kind !== "site");
       real.slice(0, 8).forEach((im) => { const s = siteById(im.site_id); card("site", s.name, `Shoreline impact · ${s.kind}`, "pairing", { tot: `Time to landfall:+${im.eta_h} h`, warn: im.eta_h <= 12 }); });
@@ -385,12 +388,19 @@
       if (/contain|boom|tow|skim|recover/i.test(a.task) && r.type !== "drone" && r.type !== "aircraft") to = mouth < 2 ? S.U.mouth[mouth++] : S.U.apex;
       a._to = to; if (to) Map3D.mission(a.resource_id, to, 1e12, 1);
     });
+    // preview where the vessels will sit: tow boats at the two mouth ends, skimmers at the closed end
+    const [mx0, mz0] = Geo.toWorld(...S.U.mouth[0]), [mx1, mz1] = Geo.toWorld(...S.U.mouth[1]), [ax, az] = Geo.toWorld(...S.U.apex);
+    const up = Math.atan2((mz0 + mz1) / 2 - az, (mx0 + mx1) / 2 - ax), side = [-(mz1 - mz0), mx1 - mx0], sl = Math.hypot(side[0], side[1]) || 1;
+    const off = (k) => Geo.toLonLat(ax + (side[0] / sl) * 0.18 * k, az + (side[1] / sl) * 0.18 * k);
+    const ahead = (ll) => { const [x, z] = Geo.toWorld(ll[0], ll[1]); return Geo.toLonLat(x + Math.cos(up) * 0.32, z + Math.sin(up) * 0.32); };
+    Map3D.setPreview([{ type: "vessel", lonlat: ahead(S.U.mouth[0]), heading: up, scale: 0.62 }, { type: "vessel", lonlat: ahead(S.U.mouth[1]), heading: up, scale: 0.62 },
+      { type: "skimmer", lonlat: off(-1), heading: up, scale: 0.34 }, { type: "skimmer", lonlat: off(1), heading: up, scale: 0.34 }]);
   }
   function approve() {
     if (!S.plan) return;
     S.approved = true; S.approvedT = Date.now(); S.execT0 = performance.now() / 1000;
     stop(); setHour(S.hC || 4); $("#tl-mode").textContent = "CONTAINMENT";
-    Map3D.boomOpacity(1); Map3D.boomProgress(0);
+    Map3D.boomOpacity(1); Map3D.boomProgress(0); Map3D.setPreview([]);
     S.plan.plan.assignments.forEach((a, i) => { a._delay = i * 0.35; a._dur = clamp(6 + (+a.eta_h || 2) * 0.8, 6, 14); if (a._to) Map3D.mission(a.resource_id, a._to, S.execT0 + a._delay, a._dur); });
     (S.plan.plan.closures || []).forEach((c) => { const m = S.siteMk[c.site_id]; if (m) m.el.classList.add("closed"); });
     moveCards((c) => c.kind === "asg" || c.kind === "det", "exec");
@@ -447,7 +457,7 @@
     $("#res-base").innerHTML = Object.keys(BASES).map((b) => `<option>${b}</option>`).join("");
     $("#res-specs").innerHTML = SPEC[S.hwType].map(([k, l, v]) => `<label>${l}<input name="${k}" type="number" step="any" value="${v}"></label>`).join("");
     $("#hw-title").textContent = TYPE_NAME[S.hwType]; $("#hw-img").src = `assets/img/hw/${S.hwType}.jpg`;
-    if (!hwView) hwView = HW.viewer($("#hw-canvas")); hwView.show(S.hwType);
+    if (!hwView) hwView = HW.viewer($("#hw-canvas"), { blueprint: true }); hwView.show(S.hwType);
     icons($("#view-res"));
     $$("#res-filters button").forEach((b) => (b.onclick = () => { S.resFilter = b.dataset.f; renderResources(); }));
     $$("#res-type button").forEach((b) => (b.onclick = () => { S.hwType = b.dataset.t; renderResources(); }));

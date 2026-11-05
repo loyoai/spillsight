@@ -194,6 +194,26 @@ const Map3D = (() => {
     }
   }
 
+  // landfall zone: where forecast particles come ashore (replaces wide risk circles)
+  let landPts = null;
+  function setLanding(lls) {
+    if (landPts) { groups.risk.remove(landPts); landPts = null; }
+    if (!lls || !lls.length) return;
+    const g = new THREE.BufferGeometry().setFromPoints(lls.map((ll) => { const [x, z] = Geo.toWorld(ll[0], ll[1]); return new THREE.Vector3(x, 0.12, z); }));
+    landPts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xff4d4f, size: 6, sizeAttenuation: false, transparent: true, opacity: 0.9, depthWrite: false }));
+    landPts.renderOrder = 7; groups.risk.add(landPts);
+  }
+  const previews = [];
+  function setPreview(list) {
+    previews.forEach((o) => groups.booms.remove(o)); previews.length = 0;
+    for (const p of list || []) {
+      const o = (HW.make[p.type] || HW.make.vessel)();
+      o.traverse((m) => { if (m.material) { m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.8; } });
+      if (o.userData.wake) o.userData.wake.visible = false;
+      const [x, z] = Geo.toWorld(p.lonlat[0], p.lonlat[1]); o.position.set(x, OIL_Y + 0.01, z); o.rotation.y = -(p.heading || 0); o.scale.setScalar(p.scale || 0.28);
+      groups.booms.add(o); previews.push(o);
+    }
+  }
   // ------------------------------------------------------------------ detection overlay (image draped on its footprint) + slick polygon
   function setImageOverlay(url, footprint, opacity) {
     if (imgPlane) { scene.remove(imgPlane); imgPlane = null; }
@@ -285,7 +305,7 @@ const Map3D = (() => {
 
   // ------------------------------------------------------------------ booms and assets
   function setBooms(lines) {
-    groups.booms.clear();
+    groups.booms.clear(); previews.length = 0;
     for (const b of lines) {
       const pts = b.map((ll) => { const [x, z] = Geo.toWorld(ll[0], ll[1]); return new THREE.Vector3(x, OIL_Y + 0.03, z); });
       if (pts.length < 2) continue;
@@ -322,7 +342,7 @@ const Map3D = (() => {
     a.line.geometry.setFromPoints(pts); a.line.computeLineDistances();
   }
   function updateAssets(clock, t) {
-    const s = clamp(cam.dist * 0.011, 0.15, 3.2);
+    const s = clamp(cam.dist * 0.011, 0.26, 3.2);
     for (const a of assets) {
       a.obj.scale.setScalar(s * (a.r.type === "aircraft" ? 1.6 : 1));
       if (a.obj.userData.rot) a.obj.userData.rot.forEach((b, i) => (b.rotation.y = t * 40 + i));
@@ -356,7 +376,7 @@ const Map3D = (() => {
   }
   return {
     init, loadTerrain, setBasemap, getBasemap: () => basemap, flyTo, setSites, setRisk, setImageOverlay, fadeImage, setSlick, slickOpacity, setForecast, setHour, centroidAt,
-    setBooms, boomProgress, boomOpacity, setAssets, mission, assetPos, marker, clearMarkers, setGroupVisible,
+    setBooms, boomProgress, boomOpacity, setLanding, setPreview, setAssets, mission, assetPos, marker, clearMarkers, setGroupVisible,
     onPick: (f) => (onPick = f), onFrame: (f) => frameHooks.push(f), setClock: (c) => (simClock = c), cam, canvas: () => renderer.domElement,
   };
 })();

@@ -213,7 +213,10 @@ const HW = (() => {
     const key = new THREE.DirectionalLight(0xffffff, 0.9); key.position.set(2.5, 3.5, 2); scene.add(key);
     const fill = new THREE.DirectionalLight(0x9fb8ff, 0.35); fill.position.set(-2.5, 1.2, 1.5); scene.add(fill);
     const rim = new THREE.DirectionalLight(0xb6c94a, 0.45); rim.position.set(-2, 1.5, -3); scene.add(rim);
-    if (!opts.space) {
+    if (opts.blueprint) {
+      const grid = new THREE.GridHelper(2.4, 24, 0x5f9fd6, 0x2c5f8f); grid.position.y = -0.12; scene.add(grid);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.008, 96).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xbfe3ff })); ring.position.y = -0.118; scene.add(ring);
+    } else if (!opts.space) {
       const floor = new THREE.Mesh(new THREE.CircleGeometry(1.05, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x10151b })); floor.position.y = -0.12; scene.add(floor);
       const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.55, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false })); shadow.position.y = -0.116; scene.add(shadow);
       const ring = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.012, 96).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xb6c94a, transparent: true, opacity: 0.6 })); ring.position.y = -0.118; scene.add(ring);
@@ -229,6 +232,11 @@ const HW = (() => {
       if (model) scene.remove(model);
       type = t; model = (make[t] || make.vessel)();
       if (model.userData.wake) model.userData.wake.visible = false;
+      if (opts.blueprint) {
+        const edges = [];
+        model.traverse((m) => { if (m.isMesh) { edges.push(m); m.material = new THREE.MeshBasicMaterial({ color: 0x103a66, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }); } });
+        edges.forEach((m) => { const l = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 28), new THREE.LineBasicMaterial({ color: 0xbfe3ff })); m.add(l); });
+      }
       model.scale.setScalar(t === "satellite" ? 0.85 : t === "aircraft" ? 1.0 : t === "boom" ? 1.0 : t === "skimmer" ? 1.5 : t === "drone" ? 1.8 : 1.35);
       scene.add(model);
     }
