@@ -22,7 +22,7 @@ The Meta key is read from `META_API_KEY` (env) or `../.env` and is never logged.
 | POST | `/api/detect` | SAM 3.1, $0.0025 per call. `points` → point prompt `<0f>1<|point;x;y;w;h|>…`. Results are cached on disk (`server/cache/`) by image+prompt, so a repeat costs $0 (`cached: true`). Extra field: `prompt`. |
 | POST | `/api/detect/sample` | Bundled result (simulated AI-generated SAR image, `web/assets/img/sample_sar.jpg`), cost 0. Optional body `{footprint}`; the default footprint is 6 km wide centred on 56.52, 26.47. Extra fields: `footprint, image_url, label, recorded, prompt`. |
 | POST | `/api/forecast` | Body `{slick?, hours=72, n=300, metocean?}`. No slick → default HZ-01 ellipse. No metocean → live fetch at the slick centroid. Deterministic for the same input. |
-| POST | `/api/plan` | Muse Spark 1.3 (≈$0.02 per call) with a rules fallback. Optional `engine: "rules"` forces the free planner. Identical requests are served from memory (`cached: true`, cost 0). `resources` is optional (defaults to the store). Pass the forecast `stats` as `forecast_summary`. |
+| POST | `/api/plan` | Muse Wonder (≈$0.02 per call) with a rules fallback. Optional `engine: "rules"` forces the free planner. Identical requests are served from memory (`cached: true`, cost 0). `resources` is optional (defaults to the store). Pass the forecast `stats` as `forecast_summary`. |
 | GET | `/api/ledger` | `{total_usd, cap_usd, remaining_usd, entries}` |
 
 ## Forecast details

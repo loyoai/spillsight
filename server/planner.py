@@ -1,6 +1,7 @@
 """Response planner: Muse Spark 1.3 (JSON schema) with a deterministic rules fallback."""
 import hashlib
 import json
+import os
 import math
 import time
 
@@ -288,29 +289,41 @@ def _prompt(body, resources, sites_by_id):
     return "\n".join(lines)
 
 
+PLAN_MODEL = os.environ.get("SPILL_PLAN_MODEL", "muse-wonder-1.0")
+
+
 def muse_plan(body, resources, sites_by_id):
     """Returns (plan|None, cost, error)."""
     if not common.has_key():
         return None, 0.0, "no key"
     if not common.budget_allows(common.MUSE_RESERVE):
         return None, 0.0, "spending cap reached"
-    req = {"model": "muse-spark-1.3", "reasoning": {"effort": "low"},
-           "input": [{"role": "system", "content": "You are an oil spill response planner (ITOPF/IMO "
-                      "practice). Output only the JSON object required by the schema."},
+    system = ("You are an oil spill response planner (ITOPF/IMO practice). Output only the JSON object "
+              "required by the schema.")
+    req = {"model": PLAN_MODEL, "reasoning": {"effort": "low"},
+           "input": [{"role": "system", "content": system},
                      {"role": "user", "content": _prompt(body, resources, sites_by_id)}],
            "text": {"format": {"type": "json_schema", "name": "spillsight_plan", "strict": True,
                                "schema": _schema()}}}
     t0 = time.time()
-    status, resp, err = common.meta_post("/responses", req, timeout=150)
+    status, resp, err = common.meta_post("/responses", req, timeout=180)
+    if status == 400:
+        # model without structured-output support: ask for the same object as plain JSON text
+        req.pop("text", None); req.pop("reasoning", None)
+        req["input"][0]["content"] = system + " Return a single JSON object with exactly these keys and types: " + json.dumps(_schema())
+        status, resp, err = common.meta_post("/responses", req, timeout=180)
     usage = (resp or {}).get("usage") or {}
     cost = (usage.get("input_tokens", 0) * common.MUSE_IN_PER_TOKEN
             + usage.get("output_tokens", 0) * common.MUSE_OUT_PER_TOKEN) if status == 200 else 0.0
-    common.ledger_add("muse-spark-1.3", "/v1/responses", "spillsight plan", cost, status,
+    common.ledger_add(PLAN_MODEL, "/v1/responses", "spillsight plan", cost, status,
                       json.dumps(usage) if usage else f"{time.time() - t0:.1f}s {err[:120]}")
     if status != 200:
         return None, cost, f"HTTP {status}: {err[:200]}"
+    txt = common.output_text(resp).strip()
+    if txt.startswith("```"):
+        txt = txt.strip("`").split("\n", 1)[1] if "\n" in txt else txt
     try:
-        plan = json.loads(common.output_text(resp))
+        plan = json.loads(txt[txt.find("{"): txt.rfind("}") + 1])
     except ValueError:
         return None, cost, "model output was not JSON"
     return _validate(plan, body, resources, sites_by_id), cost, ""
@@ -353,7 +366,7 @@ def plan(body, resources, sites_by_id):
     if engine != "rules":
         p, cost, err = muse_plan(body, resources, sites_by_id)
         if p is not None:
-            out = {"ok": True, "source": "muse-spark-1.3", "cost_usd": round(cost, 6), "plan": p,
+            out = {"ok": True, "source": PLAN_MODEL, "cost_usd": round(cost, 6), "plan": p,
                    "cached": False}
             _cache[key] = out
             return out

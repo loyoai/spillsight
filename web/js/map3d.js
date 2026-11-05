@@ -295,6 +295,7 @@ const Map3D = (() => {
       m.userData.n = g.index.count; m.geometry.setDrawRange(0, 0); groups.booms.add(m);
     }
   }
+  function boomOpacity(op) { groups.booms.children.forEach((m) => { m.material.transparent = op < 1; m.material.opacity = op; m.material.needsUpdate = true; }); }
   function boomProgress(k) { groups.booms.children.forEach((m, i) => m.geometry.setDrawRange(0, Math.floor((m.userData.n * smooth(k * 1.2 - i * 0.08)) / 6) * 6)); }
   const assets = [];
   function setAssets(list) {
@@ -355,7 +356,7 @@ const Map3D = (() => {
   }
   return {
     init, loadTerrain, setBasemap, getBasemap: () => basemap, flyTo, setSites, setRisk, setImageOverlay, fadeImage, setSlick, slickOpacity, setForecast, setHour, centroidAt,
-    setBooms, boomProgress, setAssets, mission, assetPos, marker, clearMarkers, setGroupVisible,
+    setBooms, boomProgress, boomOpacity, setAssets, mission, assetPos, marker, clearMarkers, setGroupVisible,
     onPick: (f) => (onPick = f), onFrame: (f) => frameHooks.push(f), setClock: (c) => (simClock = c), cam, canvas: () => renderer.domElement,
   };
 })();

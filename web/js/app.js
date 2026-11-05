@@ -179,10 +179,10 @@
         sec("model", "cpu", "Model", `<div class="prop"><span>Physics</span><b>current + 3% wind + random walk (K = 3 m²/s), hourly steps, beaching on the Natural Earth 10m coastline</b></div><div class="prop"><span>Limits</span><b>uniform met field, no weathering or tides; not yet validated by hindcast</b></div>`, false);
     } else if (S.stage === "plan") {
       const P = S.plan;
-      if (!P) h = head("sparkles", "vi", "Response plan", "Muse Spark 1.3") + `<div class="act-row"><button class="bp-btn olive w" id="p-open" ${S.fc ? "" : "disabled"}><i data-lucide="sliders-horizontal"></i>Choose metrics &amp; recommend</button></div>`;
+      if (!P) h = head("sparkles", "vi", "Response plan", "Muse Wonder") + `<div class="act-row"><button class="bp-btn olive w" id="p-open" ${S.fc ? "" : "disabled"}><i data-lucide="sliders-horizontal"></i>Choose metrics &amp; recommend</button></div>`;
       else {
-        h = head("sparkles", "vi", "Response plan", `${P.source === "rules" ? "Rules planner (fallback)" : "Muse Spark 1.3"} · ${P.plan.assignments.length} assignments`) +
-          `<div class="pairc"><div class="t"><i data-lucide="ship"></i>${P.plan.assignments.length} assets <i data-lucide="arrow-right"></i> Oil slick<span class="bp-tag ${S.approved ? "green" : "orange"}">${S.approved ? "APPROVED" : "PROPOSED"}</span></div><div class="kvl"><span>Time on target</span><b class="mono">${fmtH(Math.min(...P.plan.assignments.map((a) => +a.eta_h || 0)))}</b><span>Created</span><b>${ago(S.planT)} by Muse Spark</b><span>Closures</span><b>${(P.plan.closures || []).length}</b><span>Cost</span><b class="mono">$${(P.cost_usd || 0).toFixed(4)}</b></div></div>` +
+        h = head("sparkles", "vi", "Response plan", `${P.source === "rules" ? "Rules planner (fallback)" : "Muse Wonder"} · ${P.plan.assignments.length} assignments`) +
+          `<div class="pairc"><div class="t"><i data-lucide="ship"></i>${P.plan.assignments.length} assets <i data-lucide="arrow-right"></i> Oil slick<span class="bp-tag ${S.approved ? "green" : "orange"}">${S.approved ? "APPROVED" : "PROPOSED"}</span></div><div class="kvl"><span>Time on target</span><b class="mono">${fmtH(Math.min(...P.plan.assignments.map((a) => +a.eta_h || 0)))}</b><span>Created</span><b>${ago(S.planT)} by Muse Wonder</b><span>Closures</span><b>${(P.plan.closures || []).length}</b><span>Cost</span><b class="mono">$${(P.cost_usd || 0).toFixed(4)}</b></div></div>` +
           `<div style="padding:0 12px 8px;color:#abb3bf">${esc(P.plan.summary || "")}</div>` +
           sec("asg", "ship", "Assignments", P.plan.assignments.map((a) => { const r = resById(a.resource_id) || { name: a.resource_id, type: "vessel" }; return `<div class="rowl" data-rsel="${esc(a.resource_id)}" style="cursor:pointer"><span class="ic"><i data-lucide="${TYPE_ICON[r.type] || "ship"}"></i></span><div><b>${esc(r.name)}</b><small>${esc(a.task)}</small><small style="color:#bdabff;display:block">Why: ${esc(a.reason)}</small></div><div class="r">+${(+a.eta_h).toFixed(1)} h<br><span class="bp-tag vi">${(+a.score).toFixed(2)}</span></div></div>`; }).join("")) +
           sec("booms", "waves", "Booms", (P.plan.booms || []).map((b) => `<div class="rowl"><span class="ic" style="color:#fbd065"><i data-lucide="waves"></i></span><div><b>${esc(b.kind)} · ${b.length_m} m at ${b.angle_deg}°</b><small>${esc(b.site_id ? (siteById(b.site_id) || {}).name || b.site_id : "slick leading edge")} — ${esc(b.reason)}</small></div><div></div></div>`).join("")) +
@@ -321,8 +321,8 @@
     if (!S.fc) { toast('<i data-lucide="info"></i>Run a forecast first', "or"); return; }
     const W = S.weights, ready = S.resources.filter((r) => r.status === "ready"), real = S.fc.impacts.filter((i) => (siteById(i.site_id) || {}).kind !== "lane");
     const draw = () => {
-      $("#mbox").innerHTML = `<div class="mm-h">Choose which metrics AI should prioritize<span class="ic"><button id="mm-info" title="How the recommender works"><i data-lucide="info"></i></button><button id="mm-x" title="Close"><i data-lucide="x"></i></button></span></div>${S.mmHelp ? `<div class="metric-help">Each gauge is a weight sent to <b>Muse Spark 1.3</b> with the live forecast, threatened sites and every ready asset (distance and ETA computed on the server). It returns strict JSON: one assignment per asset with a score and a plain-English reason, plus booms, closures and advisories. Same inputs are cached, so re-running costs nothing; new inputs cost about $0.02. Without a key the rules planner answers instead.</div>` : ""}
-        <div class="mm-ctx"><span><b>${ready.length}</b> ready assets</span><span><b>${real.length}</b> threatened sites</span><span>first landfall <b>${S.fc.stats.first_landfall_h != null ? "+" + S.fc.stats.first_landfall_h + " h" : "none"}</b></span><span>model <b>Muse Spark 1.3</b></span></div>
+      $("#mbox").innerHTML = `<div class="mm-h">Choose which metrics AI should prioritize<span class="ic"><button id="mm-info" title="How the recommender works"><i data-lucide="info"></i></button><button id="mm-x" title="Close"><i data-lucide="x"></i></button></span></div>${S.mmHelp ? `<div class="metric-help">Each gauge is a weight sent to <b>Muse Wonder</b> with the live forecast, threatened sites and every ready asset (distance and ETA computed on the server). It returns strict JSON: one assignment per asset with a score and a plain-English reason, plus booms, closures and advisories. Same inputs are cached, so re-running costs nothing; new inputs cost about $0.02. Without a key the rules planner answers instead.</div>` : ""}
+        <div class="mm-ctx"><span><b>${ready.length}</b> ready assets</span><span><b>${real.length}</b> threatened sites</span><span>first landfall <b>${S.fc.stats.first_landfall_h != null ? "+" + S.fc.stats.first_landfall_h + " h" : "none"}</b></span><span>model <b>Muse Wonder</b></span></div>
         <div class="gauges">${METRICS.map(([k, n]) => `<div class="gauge"><div class="t">${n}<span class="x" data-z="${k}" title="Ignore this metric">×</span></div>${gaugeSVG(W[k])}<div class="st"><button data-m="${k}" data-d="-10">−</button>${W[k]}<button data-m="${k}" data-d="10">+</button></div></div>`).join("")}</div>
         <div class="mm-f"><button id="mm-go"><i data-lucide="hammer"></i>Optimize Recommender</button><button id="mm-cont"><i data-lucide="${S.contOpt ? "refresh-cw" : "pause"}"></i>Auto re-plan on new forecast: ${S.contOpt ? "On" : "Off"}</button></div>`;
       icons($("#mbox"));
@@ -336,7 +336,7 @@
     draw(); $("#modal").classList.add("on");
   }
   async function runPlan() {
-    const b = $("#mm-go") || { set innerHTML(v) {}, set disabled(v) {} }; b.disabled = true; b.innerHTML = '<i data-lucide="loader"></i>Muse Spark is optimising…'; if (b.nodeType) icons(b);
+    const b = $("#mm-go") || { set innerHTML(v) {}, set disabled(v) {} }; b.disabled = true; b.innerHTML = '<i data-lucide="loader"></i>Muse Wonder is planning…'; if (b.nodeType) icons(b);
     try {
       const W = S.weights, tot = W.time + W.capacity + W.distance || 1;
       const impacts = S.fc.impacts.map((im) => { const s = siteById(im.site_id) || {}; return { ...im, name: s.name, kind: s.kind, lonlat: s.lonlat }; });
@@ -346,7 +346,7 @@
       showPlanOnMap(); S.board = S.board.filter((c) => c.kind !== "asg");
       P.plan.assignments.forEach((a) => { const r = resById(a.resource_id); card("asg", r ? r.name : a.resource_id, a.task, "paired", { tot: `Time on target:+${(+a.eta_h).toFixed(1)} h`, rid: a.resource_id }); });
       moveCards((c) => c.kind === "site" || c.kind === "det", "paired");
-      toast(`<i data-lucide="sparkles"></i>${P.source === "rules" ? "Rules planner" : "Muse Spark 1.3"} paired ${P.plan.assignments.length} assets`, "vi");
+      toast(`<i data-lucide="sparkles"></i>${P.source === "rules" ? "Rules planner" : "Muse Wonder"} paired ${P.plan.assignments.length} assets`, "vi");
       log(`Recommender · ${P.source} · ${P.plan.assignments.length} pairings · $${(P.cost_usd || 0).toFixed(4)}`, "#7961db");
       S.tab = "assets"; syncRail(); setStage("plan"); renderLeft(); refreshBudget();
     } catch (e) { toast(`<i data-lucide="triangle-alert"></i>Plan failed: ${esc(e.message)}`, "rd"); b.disabled = false; b.textContent = "Retry"; }
@@ -377,7 +377,7 @@
     S.U = containmentU(hC); S.hC = hC;
     const lines = [...S.U.halves];
     (P.booms || []).forEach((b) => { const s = b.site_id && siteById(b.site_id); if (s && s.lonlat) lines.push(deflection(s, b.angle_deg)); });
-    Map3D.setBooms(lines); Map3D.boomProgress(0);
+    Map3D.setBooms(lines); Map3D.boomProgress(1); Map3D.boomOpacity(0.45);
     let mouth = 0;
     P.assignments.forEach((a) => {
       const r = resById(a.resource_id); if (!r) return;
@@ -390,6 +390,7 @@
     if (!S.plan) return;
     S.approved = true; S.approvedT = Date.now(); S.execT0 = performance.now() / 1000;
     stop(); setHour(S.hC || 4); $("#tl-mode").textContent = "CONTAINMENT";
+    Map3D.boomOpacity(1); Map3D.boomProgress(0);
     S.plan.plan.assignments.forEach((a, i) => { a._delay = i * 0.35; a._dur = clamp(6 + (+a.eta_h || 2) * 0.8, 6, 14); if (a._to) Map3D.mission(a.resource_id, a._to, S.execT0 + a._delay, a._dur); });
     (S.plan.plan.closures || []).forEach((c) => { const m = S.siteMk[c.site_id]; if (m) m.el.classList.add("closed"); });
     moveCards((c) => c.kind === "asg" || c.kind === "det", "exec");
@@ -473,7 +474,7 @@
     const box = (ic, t, p, kv, cls) => `<div class="panelbox ds ${cls || ""}"><h5><i data-lucide="${ic}"></i>${t}</h5><p>${p}</p><div class="kvl">${kv.map(([a, b]) => `<span>${a}</span><b>${b}</b>`).join("")}</div></div>`;
     $("#data-wrap").innerHTML =
       box("crosshair", "Meta SAM 3.1", "Promptable segmentation. Outlines oil in satellite, aircraft and drone images from a text or point prompt.", [["Endpoint", "/v1/responses"], ["Cost", "$0.0025 / image"], ["Used for", "Detect"]]) +
-      box("sparkles", "Meta Muse Spark 1.3", "Writes the response plan as strict JSON: pairings, booms, closures and a reason for each.", [["Format", "json_schema strict"], ["Fallback", "rules planner"], ["Used for", "Recommend & plan"]]) +
+      box("sparkles", "Meta Muse Wonder", "Writes the response plan as strict JSON: pairings, booms, closures and a reason for each.", [["Format", "json_schema strict"], ["Fallback", "rules planner"], ["Used for", "Recommend & plan"]]) +
       box("image", "Meta Muse Image 1.0", "Product imagery for the hardware catalogue (labelled AI-generated).", [["Images", "6"], ["Cost", "$0.01 each"], ["Used for", "Assets"]]) +
       box("wind", "Open-Meteo (live)", "Hourly wind and ocean currents + waves (marine API) at the slick.", [["Wind", S.met ? `${S.met.wind_kn.toFixed(1)} kn` : "—"], ["Current", S.met ? `${S.met.current_kn.toFixed(2)} kn` : "—"], ["In use", m.source === "scenario" ? "Shamal scenario" : "live"]]) +
       box("satellite", "Sentinel-2 cloudless (EOX)", "Basemap imagery, CC BY 4.0. Terrain: AWS Terrain Tiles (open data).", [["Zoom", "11"], ["Extent", `${Geo.R.W.toFixed(0)} × ${Geo.R.H.toFixed(0)} km`], ["Exaggeration", `${Geo.R.exag}×`]]) +
@@ -551,7 +552,7 @@
   const GUIDE = [
     { t: "Detect oil with Meta SAM 3.1", p: "Click <em>Run SAM 3.1</em> in the right panel. The image is sent to Meta's SAM 3.1 model (live, $0.0025) and the oil outline lands on the map. <em>Cached result</em> replays a saved real response for free.", sel: () => ($("#d-run") ? "#d-run" : "#chip-go"), done: () => !!S.det },
     { t: "Forecast where the oil drifts", p: "Click <em>Forecast drift →</em>. 300 particles drift for 72 h with wind and current and stop at the coastline. Pick <em>Live · Open-Meteo</em> in the forecast panel to use today's real weather.", sel: () => ($("#d-next") ? "#d-next" : "#chip-go"), done: () => !!S.fc },
-    { t: "Ask the AI to task assets", p: "Click <em>Task assets →</em>, tune the gauges with − / +, then press <em>Optimize Recommender</em>. Muse Spark 1.3 writes the plan live (about 30 s; identical inputs are cached).", sel: () => ($("#modal").classList.contains("on") ? "#mm-go" : $("#f-next") ? "#f-next" : "#chip-go"), done: () => !!S.plan },
+    { t: "Ask the AI to task assets", p: "Click <em>Task assets →</em>, tune the gauges with − / +, then press <em>Optimize Recommender</em>. Muse Wonder writes the plan live (about 30 s; identical inputs are cached).", sel: () => ($("#modal").classList.contains("on") ? "#mm-go" : $("#f-next") ? "#f-next" : "#chip-go"), done: () => !!S.plan },
     { t: "Review the reasons, then approve", p: "Each assignment carries a <em>Why</em>. Click any site or asset marker to inspect it. Then click <em>Approve →</em>, or Reject / Reassign to change it.", sel: () => "#p-ok", done: () => S.approved },
     { t: "Watch the response run", p: "Vessels sail from their bases and the U-boom closes around the slick. Open the <em>Board</em> to see each card move as its asset arrives.", sel: () => '#menu [data-view="board"]', done: () => !!S.sawBoard },
     { t: "Use your own data", p: "Add an asset in <em>Assets</em>, upload your own image in Detect, right-click the map to measure or nominate a sighting, or <em>Export</em> the incident report.", sel: () => "#export", done: () => false },
